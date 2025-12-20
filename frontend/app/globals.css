@@ -2,28 +2,31 @@
 
 @layer base {
   :root { --neon-primary: #ff1493; --neon-secondary: #00f2ff; }
-  body { background-color: black; color: white; transition: all 0.5s ease; }
-
-  .global-frame {
-    position: fixed; inset: 0; border: 18px solid;
-    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary)) 1;
-    pointer-events: none; z-index: 100; transition: all 0.8s ease;
+  
+  /* Efecto de Grano de Película Analógico */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 150;
+    filter: contrast(150%) brightness(100%);
   }
 }
 
-/* Efecto de Escáner Laser en las Fotos */
+/* Efecto Laser Scanner mejorado */
 @utility scan-line {
-  position: absolute; width: 100%; height: 2px;
-  background: var(--neon-primary);
-  box-shadow: 0 0 15px var(--neon-primary);
-  top: 0; left: 0;
-  animation: scan 2.5s linear infinite;
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, transparent, var(--neon-primary), transparent);
+  box-shadow: 0 0 20px var(--neon-primary);
+  top: 0;
+  left: 0;
+  animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   opacity: 0;
-}
-.group:hover .scan-line { opacity: 1; }
-@keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-/* Brillo de texto dinámico */
-@utility text-neon {
-  text-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary);
 }

@@ -3,7 +3,19 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { client } from '@/lib/sanity'
 
-interface Photo { _id: string; title: string; country?: string; imageUrl: string; category: string; }
+// 1. ACTUALIZAMOS LA INTERFAZ: Añadimos 'location' para que TypeScript no dé error
+interface Photo { 
+  _id: string; 
+  title: string; 
+  country?: string; 
+  imageUrl: string; 
+  category: string;
+  // El tipo geopoint de Sanity tiene latitud y longitud
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
 
 const THEMES: Record<string, {p: string, s: string}> = {
   All: { p: "#ff1493", s: "#00f2ff" },
@@ -21,7 +33,6 @@ const THEMES: Record<string, {p: string, s: string}> = {
 
 const CATEGORIES = ["All", "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract", "Sofia", "Sofia's Artwork", "Art"];
 
-// --- SUB-COMPONENTE: RELOJ MUNDIAL ---
 const WorldClock = () => {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -50,9 +61,20 @@ export default function Home() {
   const [activeCat, setActiveCat] = useState("All");
   const [isFlashing, setIsFlashing] = useState(false);
 
+  // 2. ACTUALIZAMOS EL FETCH: Implementamos la nueva query con orden y localización
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) return; //
-    client.fetch(`*[_type == "photo"] { _id, title, country, "imageUrl": image.asset->url, category }`).then(setPhotos);
+    if (!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) return; 
+
+    const query = `*[_type == "photo"] | order(_createdAt desc) { 
+      _id, 
+      title, 
+      country, 
+      category, 
+      location, 
+      "imageUrl": image.asset->url 
+    }`;
+
+    client.fetch(query).then(setPhotos);
   }, []);
 
   useEffect(() => {
