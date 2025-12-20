@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 1. Definimos los colores neón en el tema principal */
+@theme {
+  --color-neon-pink: #ff1493;
+  --color-neon-turquoise: #40e0d0;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* 2. Añadimos los efectos de brillo y los márgenes coloridos */
+@utility text-neon-pink {
+  color: white;
+  text-shadow: 0 0 5px #fff, 0 0 10px var(--color-neon-pink), 0 0 20px var(--color-neon-pink);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@utility text-neon-turquoise {
+  color: white;
+  text-shadow: 0 0 5px #fff, 0 0 10px var(--color-neon-turquoise), 0 0 20px var(--color-neon-turquoise);
 }
 
+@utility colorful-margin {
+  padding: 12px;
+  background: black;
+  /* Creamos el margen colorido que rompe el espacio negro */
+  border: 4px solid transparent;
+  border-image: linear-gradient(to bottom right, #ff1493, #40e0d0, #ff8c00) 1;
+}
+
+/* 3. Estilos base para el fondo oscuro */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: black;
+  color: white;
+  margin: 0;
   font-family: Arial, Helvetica, sans-serif;
 }
