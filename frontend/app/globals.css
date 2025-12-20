@@ -6,27 +6,29 @@
 }
 
 @layer base {
-  body {
-    background-color: black;
-    color: white;
-    overflow-x: hidden;
-  }
+  body { background-color: black; color: white; }
 
-  /* El marco colorido que pedía el cliente en el PowerPoint */
+  /* Marco Global Permanente (Inspirado en tu PPT) */
   .global-frame {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 12px solid;
-    /* Usamos un degradado que simula tus imágenes de margen del PPT */
+    inset: 0;
+    border: 15px solid;
     border-image: linear-gradient(45deg, #ff1493, #40e0d0, #ff8c00, #ff1493) 1;
     pointer-events: none;
-    z-index: 50;
+    z-index: 9999;
+    animation: border-glow 8s linear infinite;
+  }
+
+  @keyframes border-glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5) saturate(1.5); }
   }
 }
 
-@utility text-glow-pink {
-  text-shadow: 0 0 10px rgba(255, 20, 147, 0.8), 0 0 20px rgba(255, 20, 147, 0.4);
+@utility text-neon-glow {
+  text-shadow: 0 0 10px var(--color-neon-pink), 0 0 20px rgba(255, 20, 147, 0.5);
+}
+
+@utility nav-item {
+  @apply px-4 py-2 cursor-pointer transition-all duration-300 uppercase tracking-widest text-sm border-b-2 border-transparent hover:text-neon-pink;
 }
