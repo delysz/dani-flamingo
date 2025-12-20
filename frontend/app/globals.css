@@ -1,41 +1,27 @@
 @import "tailwindcss";
 
-@theme {
-  --color-neon-pink: #ff1493;
-  --color-neon-turquoise: #40e0d0;
+@layer base {
+  :root {
+    --neon-primary: #ff1493; /* Rosa por defecto */
+    --neon-secondary: #40e0d0;
+  }
+
+  body { background-color: black; color: white; transition: background 0.5s ease; }
+
+  /* El Marco Global que cambia de color */
+  .global-frame {
+    position: fixed;
+    inset: 0;
+    border: 15px solid;
+    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary)) 1;
+    pointer-events: none;
+    z-index: 100;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
 
-/* El Marco Global "PowerPoint style" mejorado */
-.global-frame {
-  position: fixed;
-  inset: 0;
-  border: 18px solid;
-  /* Degradado animado que recorre los bordes */
-  border-image: linear-gradient(var(--angle), #ff1493, #40e0d0, #ff8c00, #ff1493) 1;
-  pointer-events: none;
-  z-index: 100;
-  animation: rotate-gradient 10s linear infinite;
-}
-
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes rotate-gradient {
-  to { --angle: 360deg; }
-}
-
-/* Cursor de Neón (Solo visible en PC) */
-.custom-cursor {
-  width: 40px;
-  height: 40px;
-  border: 2px solid var(--color-neon-turquoise);
-  border-radius: 50%;
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  mix-blend-mode: difference;
-  box-shadow: 0 0 15px var(--color-neon-turquoise);
+@utility text-dynamic-neon {
+  color: white;
+  text-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary);
+  transition: all 0.5s ease;
 }
