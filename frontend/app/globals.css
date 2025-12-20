@@ -2,36 +2,36 @@
 
 @layer base {
   :root {
-    --neon-primary: #ff1493;
+    --neon-primary: #ff1493; /* Color inicial */
     --neon-secondary: #00f2ff;
   }
 
   body {
     background-color: black;
     color: white;
-    overflow-x: hidden;
+    transition: all 0.5s ease;
   }
 
-  /* El marco que pediste en el PPT, ahora con brillo dinámico */
+  /* El Marco Global que pediste en el PPT: ahora cambia de color según el país/categoría */
   .global-frame {
     position: fixed;
     inset: 0;
     border: 18px solid;
-    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary), var(--neon-primary)) 1;
+    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary)) 1;
     pointer-events: none;
     z-index: 100;
     transition: border-image 0.8s ease;
   }
+
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: white;
+    z-index: 200;
+    pointer-events: none;
+  }
 }
 
 @utility text-neon {
-  text-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary);
-}
-
-@utility flash-effect {
-  position: fixed;
-  inset: 0;
-  background: white;
-  z-index: 200;
-  pointer-events: none;
+  text-shadow: 0 0 10px var(--neon-primary), 0 0 25px var(--neon-primary);
 }
