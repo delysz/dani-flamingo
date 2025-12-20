@@ -2,26 +2,36 @@
 
 @layer base {
   :root {
-    --neon-primary: #ff1493; /* Rosa por defecto */
-    --neon-secondary: #40e0d0;
+    --neon-primary: #ff1493;
+    --neon-secondary: #00f2ff;
   }
 
-  body { background-color: black; color: white; transition: background 0.5s ease; }
+  body {
+    background-color: black;
+    color: white;
+    overflow-x: hidden;
+  }
 
-  /* El Marco Global que cambia de color */
+  /* El marco que pediste en el PPT, ahora con brillo dinámico */
   .global-frame {
     position: fixed;
     inset: 0;
-    border: 15px solid;
-    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary)) 1;
+    border: 18px solid;
+    border-image: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary), var(--neon-primary)) 1;
     pointer-events: none;
     z-index: 100;
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-image 0.8s ease;
   }
 }
 
-@utility text-dynamic-neon {
-  color: white;
+@utility text-neon {
   text-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary);
-  transition: all 0.5s ease;
+}
+
+@utility flash-effect {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 200;
+  pointer-events: none;
 }
