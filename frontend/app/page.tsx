@@ -21,20 +21,28 @@ const THEMES: Record<string, {p: string, s: string}> = {
 
 const CATEGORIES = ["All", "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract", "Sofia", "Sofia's Artwork", "Art"];
 
-// Componente de Contador Animado
-const Counter = ({ target }: { target: number }) => {
-  const [count, setCount] = useState(0);
+// --- SUB-COMPONENTE: RELOJ MUNDIAL ---
+const WorldClock = () => {
+  const [time, setTime] = useState(new Date());
   useEffect(() => {
-    let start = 0;
-    const end = target;
-    const duration = 2000;
-    let timer = setInterval(() => {
-      start += 1;
-      setCount(start);
-      if (start === end) clearInterval(timer);
-    }, duration / end);
-  }, [target]);
-  return <span>{count}</span>;
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (offset: number) => {
+    const d = new Date(time.getTime() + offset * 3600000);
+    return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="fixed top-8 right-10 z-[120] text-[10px] font-mono tracking-tighter bg-black/40 backdrop-blur-md p-3 border border-white/10">
+      <div className="flex flex-col gap-1 uppercase">
+        <p style={{ color: 'var(--neon-primary)' }}>LDN {formatTime(0)}</p>
+        <p style={{ color: 'var(--neon-secondary)' }}>NYC {formatTime(-5)}</p>
+        <p className="text-white">TKO {formatTime(9)}</p>
+      </div>
+    </div>
+  );
 };
 
 export default function Home() {
@@ -60,49 +68,55 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white p-4 md:p-12 relative overflow-x-hidden">
       <div className="global-frame" />
+      <WorldClock />
+      
       <AnimatePresence>{isFlashing && <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-white z-[200] pointer-events-none" />}</AnimatePresence>
 
       <header className="pt-24 text-center z-10 relative">
-        <motion.img src="/logo.jpeg" className="w-20 mx-auto mb-6 drop-shadow-[0_0_15px_var(--neon-primary)]" />
+        <motion.img src="/logo.jpeg" animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-16 mx-auto mb-6 drop-shadow-[0_0_15px_var(--neon-primary)]" />
         <h1 className="text-5xl md:text-7xl font-black italic uppercase text-neon tracking-tighter transition-all duration-500">
           Dani Flamingo
         </h1>
-        <div className="text-xl md:text-4xl mt-6 font-black italic" style={{ color: 'var(--neon-secondary)' }}>
-          <Counter target={50} />+ COUNTRIES EXPLORED
-        </div>
+        <p className="text-sm md:text-xl mt-4 tracking-[0.6em] font-light" style={{ color: 'var(--neon-secondary)' }}>
+          WORLD WALKER · 50+ COUNTRIES
+        </p>
       </header>
 
-      {/* MAPA MUNDI INTERACTIVO (SIMPLIFICADO) */}
-      <section className="my-20 flex justify-center opacity-40 hover:opacity-100 transition-opacity duration-1000">
-        <svg viewBox="0 0 1000 500" className="w-full max-w-4xl fill-transparent stroke-[1px]" style={{ stroke: 'var(--neon-primary)', filter: 'drop-shadow(0 0 10px var(--neon-primary))' }}>
-          <path d="M150,150 L180,140 L200,160 L220,150 L250,180 L230,220 L200,210 Z M450,100 L500,80 L550,120 L530,180 L480,200 Z M700,250 L750,230 L800,280 L780,350 L720,330 Z" />
-          <motion.circle cx="500" cy="250" r="150" strokeWidth="0.5" strokeDasharray="5,5" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: "linear" }} />
+      {/* MAPA MUNDI ORBITAL */}
+      <div className="mt-16 flex justify-center opacity-30">
+        <svg viewBox="0 0 1000 400" className="w-full max-w-2xl stroke-[0.5px]" style={{ stroke: 'var(--neon-primary)' }}>
+          <motion.circle cx="500" cy="200" r="180" fill="none" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 15, ease: "linear" }} strokeDasharray="10 20" />
+          <path d="M200,200 Q500,50 800,200" fill="none" opacity="0.5" />
+          <text x="500" y="210" textAnchor="middle" className="text-[120px] font-black italic opacity-20" fill="white">MAP</text>
         </svg>
-      </section>
+      </div>
 
-      <nav className="sticky top-0 z-[110] py-10 bg-black/80 backdrop-blur-md mt-12">
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 max-w-6xl mx-auto px-6">
+      <nav className="sticky top-0 z-[110] py-8 bg-black/80 backdrop-blur-md mt-10 border-b border-white/5">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 max-w-6xl mx-auto px-6">
           {CATEGORIES.map(cat => (
-            <button key={cat} onClick={() => setActiveCat(cat)} className={`text-xs md:text-sm uppercase tracking-widest transition-all duration-300 ${activeCat === cat ? "text-neon scale-110 font-bold" : "text-white/30 hover:text-white"}`}>
+            <button key={cat} onClick={() => setActiveCat(cat)} className={`text-[10px] md:text-xs uppercase tracking-[0.3em] transition-all duration-300 ${activeCat === cat ? "text-neon scale-110 font-bold" : "text-white/40 hover:text-white"}`}>
               {cat}
             </button>
           ))}
         </div>
       </nav>
 
-      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 px-4 pb-20 mt-20">
+      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 px-4 pb-32 mt-20">
         <AnimatePresence mode="popLayout">
           {filtered.map((photo, i) => (
-            <motion.div layout key={photo._id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="group relative">
-              <div className="scan-line" /> {/* Efecto de escáner al hover */}
-              <div className="p-1.5 transition-all duration-700" style={{ background: `linear-gradient(45deg, var(--neon-primary), var(--neon-secondary))` }}>
+            <motion.div layout key={photo._id} initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="group relative">
+              <div className="scan-line" />
+              <div className="p-1 transition-all duration-700" style={{ background: `linear-gradient(45deg, var(--neon-primary), var(--neon-secondary))` }}>
                 <div className="bg-black p-1 overflow-hidden relative">
                   <img src={photo.imageUrl} alt={photo.title} className="w-full grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110" />
                 </div>
               </div>
-              <div className="mt-6 border-l-2 pl-4" style={{ borderColor: 'var(--neon-primary)' }}>
-                <h3 className="text-2xl font-black italic uppercase">{photo.title}</h3>
-                <p className="text-xs tracking-[5px] mt-2 uppercase" style={{ color: 'var(--neon-secondary)' }}>{photo.country || 'Exploration'}</p>
+              <div className="mt-6 flex justify-between items-start border-l-2 pl-4" style={{ borderColor: 'var(--neon-primary)' }}>
+                <div>
+                  <h3 className="text-2xl font-black italic uppercase leading-none">{photo.title}</h3>
+                  <p className="text-[10px] tracking-[4px] mt-2 uppercase font-mono" style={{ color: 'var(--neon-secondary)' }}>{photo.country || 'OVERSEAS'}</p>
+                </div>
+                <span className="text-white/5 text-6xl font-black italic">{(i + 1).toString().padStart(2, '0')}</span>
               </div>
             </motion.div>
           ))}
