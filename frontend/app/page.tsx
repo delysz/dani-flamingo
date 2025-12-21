@@ -41,26 +41,64 @@ const Counter = ({ to }: { to: number }) => {
   return <motion.span>{rounded}</motion.span>;
 };
 
+// --- NUEVO MAPA: SILUETA REAL ---
 const WorldMap = ({ color }: { color: string }) => {
   return (
-    <div className="relative w-full h-[350px] md:h-[500px] flex items-center justify-center opacity-60">
+    <div className="relative w-full h-[300px] md:h-[450px] flex items-center justify-center opacity-70">
+      {/* Fondo de rejilla sutil para efecto tecnológico */}
       <div 
-        className="absolute inset-0 transition-colors duration-1000"
-        style={{ background: `radial-gradient(circle at 50% 50%, ${color}15 0%, transparent 70%)` }}
+        className="absolute inset-0"
+        style={{ 
+          backgroundImage: `radial-gradient(${color}30 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+          opacity: 0.1 
+        }}
       />
-      <svg viewBox="0 0 1000 500" className="w-full h-full" style={{ filter: `drop-shadow(0 0 5px ${color}40)` }}>
-        <g fill="none" stroke={color} strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" className="transition-colors duration-1000 opacity-50">
-           <path d="M160,110 Q200,80 250,120 T350,100 T500,80 T650,100 T800,90 T900,150 M150,350 Q250,450 350,380 T550,400 M750,350 Q850,300 900,380" opacity="0.3" strokeDasharray="5,5"/>
-           <path d="M50,150 C100,100 200,50 300,150 S500,250 600,150 S800,50 950,150" opacity="0.1" />
-           <path d="M220,120 L280,120 L300,180 L250,250 L200,180 Z" /> 
-           <path d="M260,280 L320,280 L300,420 L240,380 Z" /> 
-           <path d="M460,100 L540,100 L520,160 L440,140 Z" /> 
-           <path d="M480,180 L580,180 L560,320 L500,350 L460,250 Z" /> 
-           <path d="M600,100 L850,80 L880,250 L750,300 L650,250 Z" /> 
-           <path d="M780,350 L880,350 L860,420 L800,400 Z" /> 
+      
+      <svg viewBox="0 0 1000 500" className="w-full h-full" style={{ filter: `drop-shadow(0 0 10px ${color}30)` }}>
+        {/* GRUPO DE CONTINENTES REALES (Simplificados pero reconocibles) */}
+        <g fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="transition-colors duration-1000">
+           {/* América */}
+           <path d="M250,80 L290,80 L320,150 L280,180 L260,150 L200,120 Z M280,180 L300,350 L250,420 L230,250 Z" />
+           
+           {/* Europa & Asia */}
+           <path d="M420,80 L550,80 L600,150 L550,200 L480,180 L450,150 Z M550,80 L850,80 L900,180 L800,250 L700,220 L600,150 Z" />
+           
+           {/* África */}
+           <path d="M450,200 L550,200 L580,300 L500,400 L450,300 Z" />
+           
+           {/* Australia */}
+           <path d="M780,320 L880,320 L880,400 L780,380 Z" />
+           
+           {/* Islas (Japón, UK, etc) */}
+           <circle cx="410" cy="110" r="5" /> {/* UK */}
+           <circle cx="920" cy="150" r="5" /> {/* Japon */}
+           <circle cx="580" cy="350" r="3" /> {/* Madagascar */}
         </g>
-        <circle cx="500" cy="250" r="100" fill="none" stroke={color} strokeWidth="0.5" opacity="0.2" strokeDasharray="4,4" />
-        <circle cx="500" cy="250" r="180" fill="none" stroke={color} strokeWidth="0.3" opacity="0.1" />
+        
+        {/* Círculos de Radar / Conexiones */}
+        <circle cx="500" cy="250" r="150" fill="none" stroke={color} strokeWidth="0.5" opacity="0.1" />
+        <motion.circle 
+          cx="500" cy="250" r="150" fill="none" stroke={color} strokeWidth="1" opacity="0.2" 
+          strokeDasharray="20,40"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        />
+        
+        {/* Puntos pulsantes en ubicaciones clave */}
+        <g fill={color}>
+           {[
+             {cx: 260, cy: 130}, // North America
+             {cx: 480, cy: 110}, // Europe
+             {cx: 780, cy: 140}, // Asia
+           ].map((point, i) => (
+             <motion.circle 
+               key={i} cx={point.cx} cy={point.cy} r="3"
+               animate={{ r: [3, 6, 3], opacity: [0.5, 1, 0.5] }}
+               transition={{ duration: 2, delay: i * 0.5, repeat: Infinity }}
+             />
+           ))}
+        </g>
       </svg>
     </div>
   );
@@ -147,13 +185,14 @@ export default function Home() {
         {/* Contenedor Flex para Título + Flamencos */}
         <div className="flex items-center justify-center w-full gap-4 md:gap-12 lg:gap-20 mb-2">
           
-          {/* FLAMENCO IZQUIERDO: Usamos flamin.png (mira a la derecha -> hacia el título) */}
+          {/* FLAMENCO IZQUIERDO: flamin.png (mira derecha) */}
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
             className="hidden md:block relative w-20 h-20 lg:w-28 lg:h-28 transition-all duration-1000"
-            style={{ filter: `drop-shadow(0 0 25px #ff0099) brightness(1.1)` }} // GLOW PINK
+            // GLOW PINK SIEMPRE FIJO
+            style={{ filter: `drop-shadow(0 0 20px #ff0099) brightness(1.1)` }} 
           >
             <Image 
               src="/flamin.png" 
@@ -166,7 +205,7 @@ export default function Home() {
 
           {/* GRUPO DE TEXTO CENTRAL */}
           <div className="flex flex-col items-center">
-            {/* Título reducido de tamaño (text-4xl a 7xl) */}
+            {/* Título más elegante y pequeño */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-sans font-bold tracking-tighter text-white drop-shadow-2xl mix-blend-overlay opacity-90 leading-tight">
               DANI<br className="md:hidden" /> FLAMINGO
             </h1>
@@ -176,13 +215,14 @@ export default function Home() {
             </p>
           </div>
 
-          {/* FLAMENCO DERECHO: Usamos flamin-reverse.png (mira a la izquierda -> hacia el título) */}
+          {/* FLAMENCO DERECHO: flamin-reverse.png (mira izquierda) */}
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
             className="hidden md:block relative w-20 h-20 lg:w-28 lg:h-28 transition-all duration-1000"
-            style={{ filter: `drop-shadow(0 0 25px #ff0099) brightness(1.1)` }} // GLOW PINK
+            // GLOW PINK SIEMPRE FIJO
+            style={{ filter: `drop-shadow(0 0 20px #ff0099) brightness(1.1)` }} 
           >
             <Image 
               src="/flamin-reverse.png" 
