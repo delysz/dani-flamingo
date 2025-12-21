@@ -31,16 +31,26 @@ const Counter = ({ to }: { to: number }) => {
 };
 
 const WorldMap = ({ color }: { color: string }) => {
-  const particles = useMemo(() => 
-    Array.from({ length: 20 }).map((_, index: number) => ({
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    size: number;
+    left: string;
+    top: string;
+    duration: number;
+    delay: number;
+  }> | null>(null);
+
+  useEffect(() => {
+    const clientParticles = Array.from({ length: 20 }).map((_, index: number) => ({
       id: index,
       size: Math.random() * 4 + 1,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
       duration: 3 + Math.random() * 2,
       delay: index * 0.2
-    }))
-  , []);
+    }));
+    setParticles(clientParticles);
+  }, []);
 
   return (
     <div className="relative w-full h-[400px] md:h-[500px]">
@@ -140,7 +150,7 @@ const WorldMap = ({ color }: { color: string }) => {
         />
       </svg>
       
-      {particles.map((particle) => (
+      {particles ? particles.map((particle) => (
         <motion.div
           key={particle.id}
           className="absolute rounded-full"
@@ -161,7 +171,7 @@ const WorldMap = ({ color }: { color: string }) => {
             delay: particle.delay
           }}
         />
-      ))}
+      )) : null}
     </div>
   );
 };
