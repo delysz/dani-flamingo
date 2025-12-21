@@ -2,18 +2,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { client } from '@/lib/sanity'
-import { COUNTRY_COORDS } from '@/lib/countries' // <--- IMPORTAMOS LAS COORDENADAS
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { 
   Globe2, MapPin, Pause, Play, RotateCcw, 
   Instagram, Mail, ShoppingBag, ArrowRight 
 } from 'lucide-react'
+import { useSpring, animated, to } from '@react-spring/web' 
+import { useInView } from 'react-intersection-observer' 
 
-// Importación dinámica del globo
+// --- IMPORTACIÓN DINÁMICA DEL GLOBO ---
 const Globe = dynamic(() => import('react-globe.gl'), { 
   ssr: false,
-  loading: () => <div className="w-full h-full flex items-center justify-center opacity-30 text-[10px] tracking-widest uppercase">Initializing Satellite...</div>
+  loading: () => <div className="flex items-center justify-center h-full text-[10px] tracking-widest text-white/30 uppercase">INITIALIZING SATELLITE...</div>
 });
 
 // --- TIPOS ---
@@ -24,6 +25,32 @@ interface Photo {
   imageUrl: string; 
   category: string;
 }
+
+// --- DICCIONARIO DE COORDENADAS (INTEGRADO AQUÍ MISMO) ---
+const COUNTRY_COORDS: Record<string, { lat: number; lng: number }> = {
+  // AMÉRICA
+  "United States": { lat: 37.0902, lng: -95.7129 }, "USA": { lat: 37.0902, lng: -95.7129 },
+  "Canada": { lat: 56.1304, lng: -106.3468 }, "Mexico": { lat: 23.6345, lng: -102.5528 },
+  "Brazil": { lat: -14.2350, lng: -51.9253 }, "Argentina": { lat: -38.4161, lng: -63.6167 },
+  "Chile": { lat: -35.6751, lng: -71.5430 }, "Colombia": { lat: 4.5709, lng: -74.2973 },
+  "Peru": { lat: -9.1900, lng: -75.0152 }, "Cuba": { lat: 21.5218, lng: -77.7812 },
+  // EUROPA
+  "Spain": { lat: 40.4637, lng: -3.7492 }, "France": { lat: 46.2276, lng: 2.2137 },
+  "Germany": { lat: 51.1657, lng: 10.4515 }, "Italy": { lat: 41.8719, lng: 12.5674 },
+  "United Kingdom": { lat: 55.3781, lng: -3.4360 }, "UK": { lat: 55.3781, lng: -3.4360 },
+  "Portugal": { lat: 39.3999, lng: -8.2245 }, "Netherlands": { lat: 52.1326, lng: 5.2913 },
+  "Belgium": { lat: 50.5039, lng: 4.4699 }, "Switzerland": { lat: 46.8182, lng: 8.2275 },
+  "Greece": { lat: 39.0742, lng: 21.8243 }, "Sweden": { lat: 60.1282, lng: 18.6435 },
+  // ASIA
+  "Japan": { lat: 36.2048, lng: 138.2529 }, "China": { lat: 35.8617, lng: 104.1954 },
+  "India": { lat: 20.5937, lng: 78.9629 }, "Thailand": { lat: 15.8700, lng: 100.9925 },
+  "Indonesia": { lat: -0.7893, lng: 113.9213 }, "South Korea": { lat: 35.9078, lng: 127.7669 },
+  "Singapore": { lat: 1.3521, lng: 103.8198 },
+  // ÁFRICA & OCEANÍA
+  "Morocco": { lat: 31.7917, lng: -7.0926 }, "South Africa": { lat: -30.5595, lng: 22.9375 },
+  "Egypt": { lat: 26.8206, lng: 30.8025 }, "Australia": { lat: -25.2744, lng: 133.7751 },
+  "New Zealand": { lat: -40.9006, lng: 174.8860 },
+};
 
 const CATEGORIES = [
   "All", "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract", "Sofia", "Sofia's Artwork"
@@ -44,16 +71,24 @@ const getThemeColor = (cat: string): string => {
   }
 };
 
-// --- CONTADOR ---
+// --- COMPONENTE: CONTADOR FÍSICAS ---
 const PhysicsCounter = ({ n }: { n: number }) => {
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) => Math.round(latest));
-  useEffect(() => { animate(count, n, { duration: 2, ease: "circOut" }); }, [n, count]);
-  return <motion.span>{rounded}</motion.span>;
+  const { number } = useSpring({
+    from: { number: 0 },
+    number: n,
+    delay: 200,
+    config: { mass: 1, tension: 20, friction: 10 },
+  });
+  return <animated.span>{number.to((n) => n.toFixed(0))}</animated.span>;
 };
 
-// --- PHOTO CARD 3D (TILT SIMULADO) ---
-const PhotoCard = ({ photo, index, themeColor, delay }: any) => {
+// --- COMPONENTE: TARJETA 3D TILT ---
+const calc = (x: number, y: number) => [-(y - window.innerHeight / 2) / 20, (x - window.innerWidth / 2) / 20, 1.1];
+const trans = (x: number, y: number, s: number) => `perspective(600px) rotateX(${x}deg) rotateY(${y}deg) scale(${s})`;
+
+const PhotoCard3D = ({ photo, index, themeColor, delay }: any) => {
+  const [props, set] = useSpring(() => ({ xys: [0, 0, 1], config: { mass: 5, tension: 350, friction: 40 } }));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -62,16 +97,19 @@ const PhotoCard = ({ photo, index, themeColor, delay }: any) => {
       transition={{ duration: 0.5, delay: delay * 0.05 }}
       className="relative group z-10 cursor-pointer"
     >
-      <div className="relative aspect-[4/5] bg-[#0a0a0a] overflow-hidden border border-white/10 transition-all duration-500 hover:border-white/40 hover:-translate-y-2 hover:shadow-2xl">
+      <animated.div
+        onMouseMove={({ clientX: x, clientY: y }) => set({ xys: calc(x, y) })}
+        onMouseLeave={() => set({ xys: [0, 0, 1] })}
+        style={{ transform: to(props.xys, trans) }}
+        className="relative aspect-[4/5] bg-[#0a0a0a] overflow-hidden border border-white/10 transition-colors duration-500 hover:border-white/40"
+      >
         <Image 
           src={photo.imageUrl} alt={photo.title} fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-all duration-700 ease-out grayscale brightness-[0.8] contrast-[1.1] group-hover:grayscale-0 group-hover:brightness-100" 
         />
-        {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
         
-        {/* Info */}
         <div className="absolute inset-x-0 bottom-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-start pointer-events-none">
            <div className="flex items-center gap-2 mb-2">
              <MapPin className="w-3 h-3" style={{ color: themeColor }} />
@@ -80,11 +118,10 @@ const PhotoCard = ({ photo, index, themeColor, delay }: any) => {
            <h3 className="text-xl font-bold uppercase text-white tracking-wide leading-none">{photo.title}</h3>
         </div>
 
-        {/* Badge */}
         <div className="absolute top-4 right-4 px-2 py-1 bg-black/50 backdrop-blur-md border border-white/10 text-[9px] uppercase tracking-widest text-white/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
           {photo.category}
         </div>
-      </div>
+      </animated.div>
       
       <div className="flex justify-between items-center mt-3 px-1 opacity-40 group-hover:opacity-100 transition-opacity duration-500">
          <div className="h-[1px] w-8 bg-current" style={{ color: themeColor }} />
@@ -94,14 +131,15 @@ const PhotoCard = ({ photo, index, themeColor, delay }: any) => {
   );
 };
 
-// --- GLOBO 3D AUTOMÁTICO (CHINCHETAS REALES) ---
+// --- GLOBO 3D INTELIGENTE (RESPONSIVE & CHINCHETAS REALES) ---
 const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => {
+  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
   const [isRotating, setIsRotating] = useState(true);
 
-  // 1. Ajuste de tamaño responsive
+  // Ajuste de tamaño responsive
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -116,28 +154,23 @@ const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => 
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // 2. GENERADOR DE CHINCHETAS (PUNTOS)
+  // GENERADOR DE CHINCHETAS (PUNTOS)
   const locationsData = useMemo(() => {
-    // Obtenemos lista única de países de las fotos
     const uniqueCountries = Array.from(new Set(photos.map(p => p.country).filter(Boolean)));
-    
-    // Mapeamos contra nuestro archivo de coordenadas
+    // Usamos reduce para limpiar nulos y contentar a TypeScript
     return uniqueCountries.reduce((acc: any[], countryName) => {
       const coords = COUNTRY_COORDS[countryName as string];
       if (coords) {
         acc.push({
-          lat: coords.lat,
-          lng: coords.lng,
-          label: countryName, // Nombre que sale al pasar el ratón
-          color: color,
-          size: 0.5
+          lat: coords.lat, lng: coords.lng,
+          label: countryName, color: color, size: 0.5
         });
       }
       return acc;
     }, []);
   }, [photos, color]);
 
-  // 3. Arcos decorativos aleatorios (para dar vida)
+  // Arcos decorativos
   const arcsData = useMemo(() => Array.from({ length: 15 }, () => ({
     startLat: (Math.random() - 0.5) * 160, startLng: (Math.random() - 0.5) * 360,
     endLat: (Math.random() - 0.5) * 160, endLng: (Math.random() - 0.5) * 360,
@@ -145,15 +178,15 @@ const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => 
   })), [color]);
 
   useEffect(() => {
-    if (globeRef.current) {
+    if (globeRef.current && inView) {
       globeRef.current.controls().autoRotate = isRotating;
       globeRef.current.controls().autoRotateSpeed = 0.6;
       globeRef.current.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
     }
-  }, [isRotating]);
+  }, [isRotating, inView]);
 
   return (
-    <section className="w-full mb-24 flex flex-col items-center px-4">
+    <section ref={ref} className="w-full mb-24 flex flex-col items-center px-4">
        <div className="flex items-center gap-4 mb-8 w-full max-w-4xl">
           <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/20" />
           <h2 className="text-xl md:text-2xl font-bold uppercase tracking-widest text-white/90 flex items-center gap-3">
@@ -164,58 +197,45 @@ const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => 
        
        <div ref={containerRef} className="relative w-full max-w-4xl h-[400px] md:h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-[#080808] shadow-2xl mx-auto flex justify-center items-center">
          
-         {/* Controles del mapa */}
-         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-            <button onClick={() => setIsRotating(!isRotating)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
-              {isRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            </button>
-            <button onClick={() => globeRef.current?.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 1000)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
-              <RotateCcw className="w-3 h-3" />
-            </button>
-         </div>
+         {inView && (
+            <>
+              <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                <button onClick={() => setIsRotating(!isRotating)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
+                  {isRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                </button>
+                <button onClick={() => globeRef.current?.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 1000)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              </div>
 
-         {/* Renderizamos solo si tenemos dimensiones para evitar saltos */}
-         {dimensions.width > 1 && (
-           <Globe
-             ref={globeRef}
-             width={dimensions.width}
-             height={dimensions.height}
-             globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-             backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-             
-             // PUNTOS (Tus fotos)
-             pointsData={locationsData} 
-             pointColor="color"
-             pointAltitude={0.07}
-             pointRadius={0.6}
-             pointResolution={2}
-             
-             // ETIQUETAS (Nombre del país al hover)
-             labelsData={locationsData}
-             labelLat="lat" labelLng="lng" labelText="label"
-             labelSize={1.5} labelDotRadius={0.5} labelColor={() => "rgba(255,255,255,0.75)"}
-             labelResolution={2}
-
-             // ONDAS EXPANSIVAS (Pulse effect en tus países)
-             ringsData={locationsData}
-             ringColor={() => color}
-             ringMaxRadius={3}
-             ringPropagationSpeed={2}
-             ringRepeatPeriod={800}
-             
-             // ARCOS DECORATIVOS
-             arcsData={arcsData}
-             arcColor="color"
-             arcDashLength={0.4} arcDashGap={2} arcDashAnimateTime={2000} arcStroke={0.3}
-             
-             atmosphereColor={color}
-             atmosphereAltitude={0.15}
-             backgroundColor="rgba(0,0,0,0)"
-           />
+              {dimensions.width > 1 && (
+                <Globe
+                  ref={globeRef}
+                  width={dimensions.width}
+                  height={dimensions.height}
+                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                  backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+                  pointsData={locationsData} 
+                  pointColor="color" pointAltitude={0.07} pointRadius={0.6} pointResolution={2}
+                  labelsData={locationsData}
+                  labelLat="lat" labelLng="lng" labelText="label"
+                  labelSize={1.5} labelDotRadius={0.5} labelColor={() => "rgba(255,255,255,0.75)"}
+                  labelResolution={2}
+                  ringsData={locationsData}
+                  ringColor={() => color} ringMaxRadius={3} ringPropagationSpeed={2} ringRepeatPeriod={800}
+                  arcsData={arcsData}
+                  arcColor="color" arcDashLength={0.4} arcDashGap={2} arcDashAnimateTime={2000} arcStroke={0.3}
+                  atmosphereColor={color} atmosphereAltitude={0.15}
+                  backgroundColor="rgba(0,0,0,0)"
+                />
+              )}
+              <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none" />
+            </>
          )}
          
-         {/* Degradado inferior para integración suave */}
-         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none" />
+         {!inView && (
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: color }} />
+         )}
        </div>
     </section>
   );
@@ -252,7 +272,7 @@ export default function Home() {
   const handleSelectCategory = useCallback((cat: string) => setActiveCat(cat), []);
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white/20">
+    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white/20 relative">
       
       {/* FONDO FIJO */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -262,23 +282,24 @@ export default function Home() {
               style={{ background: `radial-gradient(circle at 50% -20%, ${themeColor}, transparent 60%)` }} />
       </div>
 
-      {/* MARCO */}
-      <div className="fixed inset-4 md:inset-8 z-50 pointer-events-none transition-all duration-1000"
-        style={{ 
-          border: `1px solid ${themeColor}`,
-          clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
-          boxShadow: `inset 0 0 20px ${themeColor}20` 
-        }} />
-      <div className="fixed top-4 left-[24px] w-12 h-[1px] bg-white/50 z-50 pointer-events-none md:top-8 md:left-[32px]" />
-      <div className="fixed top-[24px] left-4 w-[1px] h-12 bg-white/50 z-50 pointer-events-none md:left-8 md:top-[32px]" />
-      <div className="fixed bottom-4 right-[24px] w-12 h-[1px] bg-white/50 z-50 pointer-events-none md:bottom-8 md:right-[32px]" />
-      <div className="fixed bottom-[24px] right-4 w-[1px] h-12 bg-white/50 z-50 pointer-events-none md:right-8 md:bottom-[32px]" />
+      {/* --- MARCO INTEGRADO (OPEN FRAME) --- */}
+      {/* Marco que respira, no corta el contenido */}
+      <div className="fixed inset-4 md:inset-8 z-40 pointer-events-none transition-colors duration-1000">
+        {/* Esquinas */}
+        <div className="absolute top-0 left-0 w-24 md:w-48 h-24 md:h-48 rounded-tl-3xl border-t border-l opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
+        <div className="absolute top-0 right-0 w-24 md:w-48 h-24 md:h-48 rounded-tr-3xl border-t border-r opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
+        <div className="absolute bottom-0 left-0 w-24 md:w-48 h-24 md:h-48 rounded-bl-3xl border-b border-l opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
+        <div className="absolute bottom-0 right-0 w-24 md:w-48 h-24 md:h-48 rounded-br-3xl border-b border-r opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
+        {/* Líneas sutiles laterales */}
+        <div className="absolute top-24 bottom-24 left-0 w-[1px] opacity-10" style={{ background: themeColor }} />
+        <div className="absolute top-24 bottom-24 right-0 w-[1px] opacity-10" style={{ background: themeColor }} />
+      </div>
 
-      {/* CONTENIDO */}
+      {/* CONTENIDO PRINCIPAL */}
       <div className="relative z-10 w-full min-h-screen px-8 md:px-20 lg:px-32 flex flex-col items-center">
 
         {/* HERO */}
-        <header className="w-full max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[70vh] relative mb-12">
+        <header className="w-full max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[70vh] relative mb-12 mt-12">
           <div className="flex items-center justify-center w-full gap-4 md:gap-12 lg:gap-20 mb-8 scale-90 md:scale-100">
             <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.5, ease: "circOut" }} className="relative w-24 h-24 md:w-32 md:h-32">
               <Image src="/flamin.png" alt="Flamingo" fill className="object-contain" style={{ filter: `drop-shadow(0 0 30px ${themeColor})` }} />
@@ -332,18 +353,18 @@ export default function Home() {
             <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-16">
               <AnimatePresence mode="popLayout">
                 {filtered.map((photo, i) => (
-                  <PhotoCard key={photo._id} photo={photo} index={i} themeColor={themeColor} delay={i} />
+                  <PhotoCard3D key={photo._id} photo={photo} index={i} themeColor={themeColor} delay={i} />
                 ))}
               </AnimatePresence>
             </motion.div>
           )}
         </div>
 
-        {/* MAPA CON DATOS REALES */}
+        {/* MAPA */}
         <GlobeSection color={themeColor} photos={photos} />
 
         {/* FOOTER */}
-        <footer className="w-full border-t border-white/5 pt-16 pb-12 flex flex-col items-center gap-8 text-[10px] uppercase tracking-[0.2em] text-white/30">
+        <footer className="w-full border-t border-white/5 pt-16 pb-12 flex flex-col items-center gap-8 text-[10px] uppercase tracking-[0.2em] text-white/30 mb-8">
            <div className="flex gap-8">
               <a href="#" className="hover:text-white transition-colors flex items-center gap-2"><Instagram className="w-4 h-4" /> Instagram</a>
               <a href="#" className="hover:text-white transition-colors flex items-center gap-2"><Mail className="w-4 h-4" /> Email</a>
