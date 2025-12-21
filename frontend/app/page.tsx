@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { client } from '@/lib/sanity'
 import Image from 'next/image'
-import Masonry from 'react-masonry-css'
 
 // --- 1. CONFIGURACIÓN E INTERFACES ---
 
@@ -23,7 +22,7 @@ const CATEGORIES = [
 ];
 
 // Función para determinar el color del tema
-const getThemeColor = (cat: string) => {
+const getThemeColor = (cat: string): string => {
   if (["Sofia", "Sofia's Artwork"].includes(cat)) return "#ff0099"; // Rosa Neón
   return "#00f2ff"; // Cian Neón
 };
@@ -38,85 +37,145 @@ const Counter = ({ to }: { to: number }) => {
   return <motion.span>{rounded}</motion.span>;
 };
 
-// Mapa del Mundo Vectorial (Geográficamente correcto)
-const ProfessionalMap = ({ color }: { color: string }) => {
-  return (
-    <div className="w-full h-full flex justify-center items-center overflow-hidden">
-      <svg 
-        viewBox="0 0 1000 450" 
-        className="w-full h-full opacity-40 transition-all duration-700"
-        style={{ filter: `drop-shadow(0 0 5px ${color})` }}
-      >
-        <g fill={color} className="transition-colors duration-700">
-          {/* Norteamérica */}
-          <path d="M150,80 L250,80 L280,150 L200,200 L120,150 Z" opacity="0.1" /> 
-          <path d="M50,80 Q150,50 250,80 T300,200 T150,220 T50,80" fill="none" stroke={color} strokeWidth="1"/>
-          {/* Path complejo simplificado para estética 'Tech' */}
-          <path d="M165,115 l5,-5 l10,0 l5,10 l-10,15 l-15,-5 z M200,100 l20,-10 l30,20 l-10,40 l-40,-10 z" /> 
-          
-          {/* Sudamérica */}
-          <path d="M260,240 l40,10 l20,80 l-30,60 l-40,-40 z" />
-          
-          {/* Europa & Asia (Masa continental) */}
-          <path d="M450,90 l50,-20 l100,0 l50,20 l20,50 l-40,30 l-80,0 l-60,-40 z" />
-          <path d="M600,80 l80,-10 l120,30 l40,80 l-60,40 l-100,-20 z" />
-          
-          {/* África */}
-          <path d="M460,190 l60,-10 l50,40 l10,80 l-50,60 l-70,-30 z" />
-          
-          {/* Australia */}
-          <path d="M800,280 l60,10 l20,50 l-40,20 l-50,-30 z" />
-          
-          {/* Puntos de conexión "Tech" */}
-          <circle cx="220" cy="140" r="3" /> <circle cx="280" cy="300" r="3" />
-          <circle cx="500" cy="140" r="3" /> <circle cx="840" cy="300" r="3" />
-          <circle cx="700" cy="150" r="3" /> <circle cx="520" cy="250" r="3" />
-        </g>
-        
-        {/* Líneas de escáner decorativas */}
-        <line x1="0" y1="50" x2="1000" y2="50" stroke={color} strokeWidth="0.5" opacity="0.2" />
-        <line x1="0" y1="400" x2="1000" y2="400" stroke={color} strokeWidth="0.5" opacity="0.2" />
-        <circle cx="500" cy="225" r="180" fill="none" stroke={color} strokeWidth="0.5" strokeDasharray="5 15" opacity="0.3">
-          <animateTransform attributeName="transform" type="rotate" from="0 500 225" to="360 500 225" dur="120s" repeatCount="indefinite"/>
-        </circle>
-      </svg>
-    </div>
-  )
-}
-
-// Partículas de fondo
-const ParticlesBackground = ({ color }: { color: string }) => {
+// Mapa del Mundo Vectorial (Versión profesional)
+const WorldMap = ({ color }: { color: string }) => {
+  // Generar partículas con tipado explícito
   const particles = useMemo(() => 
-    Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      speed: Math.random() * 0.5 + 0.2
+    Array.from({ length: 20 }).map((_, index: number) => ({
+      id: index,
+      size: Math.random() * 4 + 1,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: 3 + Math.random() * 2,
+      delay: index * 0.2
     }))
   , []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {particles.map(p => (
+    <div className="relative w-full h-[400px] md:h-[500px]">
+      {/* Fondo de gradiente */}
+      <div 
+        className="absolute inset-0 opacity-20 blur-3xl"
+        style={{ background: `radial-gradient(circle at 50% 50%, ${color}40 0%, transparent 70%)` }}
+      />
+      
+      {/* Mapa SVG elegante y minimalista */}
+      <svg 
+        viewBox="0 0 1200 600" 
+        className="w-full h-full opacity-90"
+        style={{ filter: `drop-shadow(0 0 30px ${color}30)` }}
+      >
+        <defs>
+          <linearGradient id="continentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.1" />
+          </linearGradient>
+          
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        
+        {/* Contornos de continentes */}
+        <g fill="none" stroke={color} strokeWidth="1.5" strokeOpacity="0.4">
+          <path d="M550,250 Q600,200 650,220 Q680,240 700,260 Q720,280 730,300 Q700,320 650,300 Q600,290 550,270 Z" />
+          <path d="M550,350 Q600,320 650,330 Q700,340 720,380 Q680,400 630,390 Q580,380 550,360 Z" />
+          <path d="M200,250 Q250,200 300,220 Q350,240 380,280 Q350,320 300,340 Q250,350 200,330 Z" />
+          <path d="M750,200 Q800,180 850,200 Q900,220 920,260 Q880,280 830,270 Q780,260 750,240 Z" />
+          <path d="M900,380 Q930,360 950,380 Q970,400 940,420 Q910,440 890,420 Z" />
+        </g>
+        
+        {/* Líneas de conexión */}
+        <g stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="8,8">
+          <line x1="300" y1="280" x2="550" y2="260" />
+          <line x1="650" y1="260" x2="750" y2="230" />
+          <line x1="550" y1="320" x2="650" y2="340" />
+          <line x1="700" y1="280" x2="850" y2="260" />
+        </g>
+        
+        {/* Puntos principales (ciudades) */}
+        <g fill={color} filter="url(#glow)">
+          {[0, 0.5, 1, 1.5, 2].map((delay: number, index: number) => {
+            const points = [
+              { cx: 300, cy: 280 },
+              { cx: 550, cy: 260 },
+              { cx: 650, cy: 340 },
+              { cx: 750, cy: 230 },
+              { cx: 850, cy: 260 }
+            ];
+            
+            return (
+              <motion.circle 
+                key={index}
+                cx={points[index]?.cx}
+                cy={points[index]?.cy}
+                r="6"
+                animate={{ scale: [1, 1.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity, delay }}
+              />
+            );
+          })}
+        </g>
+        
+        {/* Líneas de escáner animadas */}
+        <motion.line 
+          x1="0" y1="0" x2="1200" y2="600"
+          stroke={color} 
+          strokeWidth="2" 
+          strokeOpacity="0.1"
+          initial={{ x1: -200, y1: -200, x2: 0, y2: 0 }}
+          animate={{ 
+            x1: [-200, 1400] as [number, number],
+            y1: [-200, 800] as [number, number],
+            x2: [0, 1600] as [number, number],
+            y2: [0, 1000] as [number, number]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+        
+        {/* Anillos concéntricos */}
+        <circle 
+          cx="600" cy="300" r="150" 
+          fill="none" 
+          stroke={color} 
+          strokeWidth="1" 
+          strokeOpacity="0.1"
+          strokeDasharray="5,15"
+        />
+        <circle 
+          cx="600" cy="300" r="250" 
+          fill="none" 
+          stroke={color} 
+          strokeWidth="0.5" 
+          strokeOpacity="0.05"
+          strokeDasharray="10,30"
+        />
+      </svg>
+      
+      {/* Efecto de partículas flotantes */}
+      {particles.map((particle) => (
         <motion.div
-          key={p.id}
+          key={particle.id}
           className="absolute rounded-full"
           style={{
             background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
+            width: particle.size,
+            height: particle.size,
+            left: particle.left,
+            top: particle.top,
           }}
           animate={{
-            y: [0, 30, 0],
+            y: [0, -20, 0],
             opacity: [0.2, 0.8, 0.2],
           }}
           transition={{
-            duration: 3 + p.speed,
+            duration: particle.duration,
             repeat: Infinity,
-            delay: p.id * 0.05
+            delay: particle.delay
           }}
         />
       ))}
@@ -124,65 +183,132 @@ const ParticlesBackground = ({ color }: { color: string }) => {
   );
 };
 
-// Hook para sonidos
-const useSound = (src: string, volume = 0.3) => {
-  const [audio] = useState(typeof Audio !== 'undefined' ? new Audio(src) : null);
+// Componente para estado vacío
+const EmptyState = ({ 
+  activeCat, 
+  availableCategories, 
+  themeColor, 
+  onSelectCategory,
+  getThemeColor 
+}: { 
+  activeCat: string; 
+  availableCategories: string[]; 
+  themeColor: string; 
+  onSelectCategory: (cat: string) => void;
+  getThemeColor: (cat: string) => string;
+}) => {
   
-  useEffect(() => {
-    if (audio) {
-      audio.volume = volume;
-      audio.preload = 'auto';
-    }
-  }, [audio, volume]);
-
-  const play = useCallback(() => {
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch(console.log);
-    }
-  }, [audio]);
-
-  return { play };
+  const otherCategories = useMemo(() => 
+    availableCategories.filter((cat: string) => 
+      cat !== activeCat && cat !== "All"
+    ).slice(0, 4)
+  , [availableCategories, activeCat]);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="text-center py-16 px-6"
+    >
+      {/* Icono animado */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="w-24 h-24 mx-auto mb-8 opacity-20"
+        style={{ color: themeColor }}
+      >
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5,5" />
+          <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
+          <path d="M30,50 L70,50 M50,30 L50,70" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      </motion.div>
+      
+      {/* Mensaje principal */}
+      <h3 className="text-3xl font-bold mb-4" style={{ color: themeColor }}>
+        {activeCat === "All" ? "GALERÍA VACÍA" : `0 FOTOS EN "${activeCat.toUpperCase()}"`}
+      </h3>
+      
+      <p className="text-gray-400 mb-8 max-w-md mx-auto">
+        {activeCat === "All" 
+          ? "Añade fotos desde Sanity Studio para comenzar"
+          : "Esta categoría está vacía. Prueba con alguna de estas:"}
+      </p>
+      
+      {/* Botones de categorías alternativas */}
+      {otherCategories.length > 0 && (
+        <div className="flex flex-wrap gap-3 justify-center mb-8">
+          {otherCategories.map((cat: string) => (
+            <motion.button
+              key={cat}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onSelectCategory(cat)}
+              className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+              style={{
+                backgroundColor: `${getThemeColor(cat)}20`,
+                border: `1px solid ${getThemeColor(cat)}`,
+                color: getThemeColor(cat)
+              }}
+            >
+              {cat}
+            </motion.button>
+          ))}
+        </div>
+      )}
+      
+      {/* Botón para ver todas */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => onSelectCategory("All")}
+        className="px-8 py-3 rounded-lg font-bold text-white transition-colors"
+        style={{ backgroundColor: themeColor }}
+      >
+        VER TODAS LAS FOTOS ({availableCategories.filter((c: string) => c !== "All").length} categorías)
+      </motion.button>
+    </motion.div>
+  );
 };
 
 // --- 3. COMPONENTE PRINCIPAL ---
 
 export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [activeCat, setActiveCat] = useState("All");
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]); // Para depuración
-
-  // Sonidos
-  const { play: playHoverSound } = useSound('/sounds/hover.mp3', 0.2);
-  const { play: playClickSound } = useSound('/sounds/click.mp3', 0.3);
+  const [activeCat, setActiveCat] = useState<string>("All");
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Carga de datos
   useEffect(() => {
-    // Traemos TODAS las fotos primero
+    setIsLoading(true);
     const query = `*[_type == "photo"] | order(_createdAt desc) { 
       _id, title, country, category, "imageUrl": image.asset->url 
     }`;
     
     client.fetch(query)
-      .then((data) => {
+      .then((data: Photo[]) => {
+        console.log("📸 Fotos cargadas:", data.length);
+        console.log("🏷️ Categorías únicas:", [...new Set(data.map(p => p.category))]);
+        
         setPhotos(data);
-        // Extraemos qué categorías existen realmente en Sanity para ayudarte a depurar
-        const realCategories = Array.from(new Set(data.map((p: any) => p.category)));
-        setAvailableCategories(realCategories as string[]);
+        const realCategories = Array.from(new Set(data.map((p: Photo) => p.category)));
+        setAvailableCategories(realCategories);
       })
-      .catch(console.error);
+      .catch((error: Error) => console.error(error))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Lógica de filtrado y color
-  const filtered = activeCat === "All" ? photos : photos.filter(p => p.category === activeCat);
-  const themeColor = getThemeColor(activeCat);
+  const filtered = useMemo(() => 
+    activeCat === "All" ? photos : photos.filter(p => p.category === activeCat)
+  , [activeCat, photos]);
+  
+  const themeColor = useMemo(() => getThemeColor(activeCat), [activeCat]);
 
-  // Configuración de masonry
-  const breakpointColumnsObj = {
-    default: 3,
-    1100: 2,
-    700: 1,
-  };
+  const handleSelectCategory = useCallback((cat: string) => {
+    setActiveCat(cat);
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#050505] text-white p-6 md:p-16 relative overflow-x-hidden selection:bg-white/20 selection:text-black">
@@ -190,9 +316,6 @@ export default function Home() {
       {/* Marco Global Sutil */}
       <div className="fixed inset-0 border-[20px] border-transparent pointer-events-none z-50 transition-colors duration-1000" 
            style={{ borderImage: `linear-gradient(to bottom, ${themeColor}, transparent) 1`, opacity: 0.5 }} />
-
-      {/* Partículas de fondo */}
-      <ParticlesBackground color={themeColor} />
 
       {/* HEADER */}
       <header className="pt-12 pb-8 text-center relative z-10 max-w-5xl mx-auto">
@@ -207,24 +330,20 @@ export default function Home() {
       </header>
 
       {/* ZONA DEL MAPA */}
-      <div className="relative w-full h-[250px] md:h-[400px] mb-16 grayscale hover:grayscale-0 transition-all duration-1000">
-        <ProfessionalMap color={themeColor} />
+      <div className="relative w-full h-[250px] md:h-[500px] mb-16 grayscale hover:grayscale-0 transition-all duration-1000">
+        <WorldMap color={themeColor} />
       </div>
 
       {/* MENÚ DE CATEGORÍAS */}
       <nav className="flex flex-wrap justify-center gap-6 md:gap-10 mb-20 max-w-6xl mx-auto px-4">
-        {CATEGORIES.map(cat => {
+        {CATEGORIES.map((cat: string) => {
           const isActive = activeCat === cat;
           const catColor = getThemeColor(cat);
           
           return (
             <button 
               key={cat} 
-              onClick={() => {
-                playClickSound();
-                setActiveCat(cat);
-              }}
-              onMouseEnter={() => playHoverSound()}
+              onClick={() => handleSelectCategory(cat)}
               className="text-sm md:text-lg tracking-widest uppercase transition-all duration-300 relative group py-2"
               style={{ 
                 color: isActive ? catColor : "rgba(255,255,255,0.4)", 
@@ -235,56 +354,59 @@ export default function Home() {
               {cat}
               <span className={`absolute bottom-0 left-0 h-[1px] bg-current transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </button>
-          )
+          );
         })}
       </nav>
 
-      {/* AVISO DE DEPURACIÓN (Solo sale si no hay fotos) */}
-      {photos.length === 0 && (
+      {/* ESTADOS DE CARGA Y VACÍO */}
+      {isLoading ? (
+        <div className="text-center p-16">
+          <div className="inline-block w-12 h-12 border-4 border-t-transparent border-[color:var(--theme-color)] rounded-full animate-spin" 
+               style={{ '--theme-color': themeColor } as React.CSSProperties}></div>
+          <p className="mt-4 text-gray-400">Cargando fotos desde Sanity...</p>
+        </div>
+      ) : photos.length === 0 ? (
         <div className="text-center p-8 border border-red-500 text-red-500 mb-10 max-w-2xl mx-auto bg-red-900/10">
-          <p className="font-bold mb-2">⚠ NO SE VEN FOTOS</p>
-          <p>Comprueba en Sanity.io Manage &gt; API &gt; CORS que esté añadido: <strong>http://localhost:3000</strong> con "Allow Credentials".</p>
-        </div>
-      )}
-
-      {/* AVISO DE CATEGORÍA VACÍA (Si hay fotos pero el filtro falla) */}
-      {photos.length > 0 && filtered.length === 0 && (
-        <div className="text-center text-gray-500 mb-10">
-          <p>No hay fotos en la categoría "{activeCat}".</p>
-          <p className="text-xs mt-2">Categorías detectadas en tu Sanity: {availableCategories.join(", ")}</p>
-        </div>
-      )}
-
-      {/* GALERÍA CON MASONRY */}
-      <div className="max-w-7xl mx-auto pb-24">
-        <AnimatePresence mode="popLayout">
-          <Masonry
-            breakpointCols={breakpointColumnsObj}
-            className="flex gap-6"
-            columnClassName="masonry-column"
+          <p className="font-bold mb-2">⚠ NO HAY FOTOS EN LA BASE DE DATOS</p>
+          <p className="mb-4">Añade fotos desde tu Sanity Studio.</p>
+          <a 
+            href="https://daniela-flamingo.sanity.studio" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-block px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
           >
-            {filtered.map((photo, i) => (
+            Ir a Sanity Studio
+          </a>
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState 
+          activeCat={activeCat}
+          availableCategories={availableCategories}
+          themeColor={themeColor}
+          onSelectCategory={handleSelectCategory}
+          getThemeColor={getThemeColor}
+        />
+      ) : (
+        /* GALERÍA */
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-w-7xl mx-auto pb-24">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((photo: Photo, i: number) => (
               <motion.div
-                layout
-                key={photo._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                layout key={photo._id}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="group cursor-pointer"
               >
                 <div className="relative aspect-[3/4] bg-[#111] overflow-hidden border border-white/5 transition-all duration-500 group-hover:border-[color:var(--neon)]"
-                     style={{ '--neon': themeColor } as any}>
+                     style={{ '--neon': themeColor } as React.CSSProperties}>
                   
-                  {/* Imagen con Next Image */}
+                  {/* Imagen con Next.js Image */}
                   <Image 
                     src={photo.imageUrl} 
                     alt={photo.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105"
+                    className="object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" 
                     loading="lazy"
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAfEAACAQMFAQEAAAAAAAAAAAABAgMABAUGIWFRkfD/xAAVAQEBAAAAAAAAAAAAAAAAAAABAv/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AJtvVk5cubK2v2XzrJ6xY6j3hN4IrX2Kkw6XUc8k/cq0x9lG5t5mkuJpGk8i4QYHwUUFBX/2Q=="
                   />
                   
                   {/* Overlay Información */}
@@ -302,9 +424,18 @@ export default function Home() {
                 </div>
               </motion.div>
             ))}
-          </Masonry>
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Información de depuración (solo en desarrollo) */}
+      {process.env.NODE_ENV === 'development' && photos.length > 0 && (
+        <div className="fixed bottom-4 left-4 bg-black/80 text-xs p-3 rounded-lg opacity-70 hover:opacity-100 transition-opacity z-50">
+          <p>Total fotos: {photos.length}</p>
+          <p>Fotos filtradas: {filtered.length}</p>
+          <p>Categorías en Sanity: {availableCategories.join(", ")}</p>
+        </div>
+      )}
     </main>
-  )
+  );
 }

@@ -2,7 +2,6 @@
 
 @layer base {
   :root {
-    /* Colores extraídos de tus imágenes */
     --neon-blue: #00f2ff; /* Cian eléctrico */
     --neon-pink: #ff0099; /* Rosa fucsia */
     --bg-color: #050505;
@@ -12,33 +11,71 @@
     background-color: var(--bg-color);
     color: white;
     overflow-x: hidden;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Marco Global mejorado */
-  .global-frame {
-    position: fixed; inset: 0; pointer-events: none; z-index: 100;
-    border: 18px solid transparent;
-    /* El borde cambia suavemente entre azul y rosa */
-    border-image: linear-gradient(to bottom, var(--neon-blue), var(--neon-pink)) 1;
-    opacity: 0.8;
+  /* Scrollbar personalizado */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--neon-blue), var(--neon-pink));
+    border-radius: 5px;
   }
 }
 
-@utility text-glow-blue {
-  color: var(--neon-blue);
-  text-shadow: 0 0 10px rgba(0, 242, 255, 0.6);
+@layer utilities {
+  .text-glow-blue {
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.6);
+  }
+
+  .text-glow-pink {
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px rgba(255, 0, 153, 0.6);
+  }
+  
+  /* Animaciones personalizadas */
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
 }
 
-@utility text-glow-pink {
-  color: var(--neon-pink);
-  text-shadow: 0 0 10px rgba(255, 0, 153, 0.6);
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
 }
 
-/* Clases para Masonry */
-.masonry-column {
-  background-clip: padding-box;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.masonry-column > div {
-  margin-bottom: 24px;
+/* Selección de texto personalizada */
+::selection {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: inherit;
 }
