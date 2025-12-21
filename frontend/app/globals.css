@@ -33,3 +33,12 @@
   color: var(--neon-pink);
   text-shadow: 0 0 10px rgba(255, 0, 153, 0.6);
 }
+
+/* Clases para Masonry */
+.masonry-column {
+  background-clip: padding-box;
+}
+
+.masonry-column > div {
+  margin-bottom: 24px;
+}
