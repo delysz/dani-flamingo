@@ -3,8 +3,10 @@
 @layer base {
   :root {
     --bg-color: #050505;
-    /* Color por defecto por si falla la carga */
-    --theme-color: #00f2ff; 
+    --theme-neon: #00f2ff;
+    --theme-pink: #ff0099;
+    --theme-green: #00ff41;
+    --theme-orange: #ff4d00;
   }
 
   body {
@@ -15,51 +17,168 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(0, 242, 255, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255, 0, 153, 0.05) 0%, transparent 40%);
   }
 
-  /* La barra de scroll ahora usará la variable dinámica */
+  /* Efectos de texto neon */
+  .neon-text {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+  }
+
+  .neon-glow {
+    box-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      inset 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+
+  .neon-border {
+    border: 1px solid;
+    border-image: linear-gradient(45deg, var(--theme-neon), var(--theme-pink)) 1;
+    box-shadow: 
+      0 0 10px rgba(0, 242, 255, 0.3),
+      0 0 20px rgba(0, 242, 255, 0.2),
+      inset 0 0 20px rgba(0, 242, 255, 0.1);
+  }
+
+  /* Scrollbar con efecto neon */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
+    background: rgba(10, 10, 10, 0.8);
   }
   
   ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: linear-gradient(to bottom, 
+      transparent, 
+      rgba(0, 242, 255, 0.1) 50%,
+      transparent);
+    border-radius: 5px;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: var(--theme-color);
-    border-radius: 4px;
-    box-shadow: 0 0 10px var(--theme-color);
+    background: linear-gradient(45deg, 
+      var(--theme-neon), 
+      var(--theme-pink));
+    border-radius: 5px;
+    animation: pulseScroll 3s infinite alternate;
   }
 
-  /* El color de selección de texto también cambia dinámicamente */
+  /* Selection con efecto */
   ::selection {
-    background-color: var(--theme-color);
+    background: var(--theme-neon);
     color: #000;
+    text-shadow: 0 0 5px #fff;
   }
 }
 
 @layer utilities {
-  /* Efecto CRT de líneas de escaneo para darle textura cyberpunk */
-  .scanlines {
+  /* Efecto CRT retro */
+  .crt-effect {
+    position: relative;
+  }
+  
+  .crt-effect::after {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
     background: linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0),
-      rgba(255, 255, 255, 0) 50%,
-      rgba(0, 0, 0, 0.2) 50%,
-      rgba(0, 0, 0, 0.2)
+      rgba(18, 16, 16, 0) 50%, 
+      rgba(0, 0, 0, 0.25) 50%
     );
-    background-size: 100% 4px;
+    background-size: 100% 2px;
+    z-index: 999;
     pointer-events: none;
+    animation: scanline 8s linear infinite;
+  }
+
+  /* Grid de puntos de fondo */
+  .grid-dots {
+    background-image: 
+      radial-gradient(circle at 1px 1px, 
+        rgba(255, 255, 255, 0.1) 1px, 
+        transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Efecto holográfico */
+  .holographic {
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(0, 242, 255, 0.1) 25%,
+      rgba(255, 0, 153, 0.1) 50%,
+      rgba(0, 242, 255, 0.1) 75%,
+      transparent 100%
+    );
+    background-size: 200% 200%;
+    animation: hologram 6s ease-in-out infinite;
   }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+/* ANIMACIONES */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(1deg); }
+  75% { transform: translateY(5px) rotate(-1deg); }
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  20%, 24%, 55% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+}
+
+@keyframes scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+@keyframes hologram {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+@keyframes pulseScroll {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
