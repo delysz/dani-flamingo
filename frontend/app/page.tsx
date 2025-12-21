@@ -4,8 +4,6 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { client } from '@/lib/sanity'
 import Image from 'next/image'
 
-// --- 1. CONFIGURACIÓN E INTERFACES ---
-
 interface Photo { 
   _id: string; 
   title: string; 
@@ -14,22 +12,17 @@ interface Photo {
   category: string;
 }
 
-// Tus categorías exactas
 const CATEGORIES = [
   "All",
-  "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract", // Grupo AZUL
-  "Sofia", "Sofia's Artwork" // Grupo ROSA
+  "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract",
+  "Sofia", "Sofia's Artwork"
 ];
 
-// Función para determinar el color del tema
 const getThemeColor = (cat: string): string => {
-  if (["Sofia", "Sofia's Artwork"].includes(cat)) return "#ff0099"; // Rosa Neón
-  return "#00f2ff"; // Cian Neón
+  if (["Sofia", "Sofia's Artwork"].includes(cat)) return "#ff0099";
+  return "#00f2ff";
 };
 
-// --- 2. COMPONENTES VISUALES ---
-
-// Contador Animado
 const Counter = ({ to }: { to: number }) => {
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => Math.round(latest));
@@ -37,9 +30,7 @@ const Counter = ({ to }: { to: number }) => {
   return <motion.span>{rounded}</motion.span>;
 };
 
-// Mapa del Mundo Vectorial (Versión profesional)
 const WorldMap = ({ color }: { color: string }) => {
-  // Generar partículas con tipado explícito
   const particles = useMemo(() => 
     Array.from({ length: 20 }).map((_, index: number) => ({
       id: index,
@@ -53,13 +44,11 @@ const WorldMap = ({ color }: { color: string }) => {
 
   return (
     <div className="relative w-full h-[400px] md:h-[500px]">
-      {/* Fondo de gradiente */}
       <div 
         className="absolute inset-0 opacity-20 blur-3xl"
         style={{ background: `radial-gradient(circle at 50% 50%, ${color}40 0%, transparent 70%)` }}
       />
       
-      {/* Mapa SVG elegante y minimalista */}
       <svg 
         viewBox="0 0 1200 600" 
         className="w-full h-full opacity-90"
@@ -80,7 +69,6 @@ const WorldMap = ({ color }: { color: string }) => {
           </filter>
         </defs>
         
-        {/* Contornos de continentes */}
         <g fill="none" stroke={color} strokeWidth="1.5" strokeOpacity="0.4">
           <path d="M550,250 Q600,200 650,220 Q680,240 700,260 Q720,280 730,300 Q700,320 650,300 Q600,290 550,270 Z" />
           <path d="M550,350 Q600,320 650,330 Q700,340 720,380 Q680,400 630,390 Q580,380 550,360 Z" />
@@ -89,7 +77,6 @@ const WorldMap = ({ color }: { color: string }) => {
           <path d="M900,380 Q930,360 950,380 Q970,400 940,420 Q910,440 890,420 Z" />
         </g>
         
-        {/* Líneas de conexión */}
         <g stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="8,8">
           <line x1="300" y1="280" x2="550" y2="260" />
           <line x1="650" y1="260" x2="750" y2="230" />
@@ -97,7 +84,6 @@ const WorldMap = ({ color }: { color: string }) => {
           <line x1="700" y1="280" x2="850" y2="260" />
         </g>
         
-        {/* Puntos principales (ciudades) */}
         <g fill={color} filter="url(#glow)">
           {[0, 0.5, 1, 1.5, 2].map((delay: number, index: number) => {
             const points = [
@@ -121,7 +107,6 @@ const WorldMap = ({ color }: { color: string }) => {
           })}
         </g>
         
-        {/* Líneas de escáner animadas */}
         <motion.line 
           x1="0" y1="0" x2="1200" y2="600"
           stroke={color} 
@@ -137,7 +122,6 @@ const WorldMap = ({ color }: { color: string }) => {
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         />
         
-        {/* Anillos concéntricos */}
         <circle 
           cx="600" cy="300" r="150" 
           fill="none" 
@@ -156,7 +140,6 @@ const WorldMap = ({ color }: { color: string }) => {
         />
       </svg>
       
-      {/* Efecto de partículas flotantes */}
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
@@ -183,7 +166,6 @@ const WorldMap = ({ color }: { color: string }) => {
   );
 };
 
-// Componente para estado vacío
 const EmptyState = ({ 
   activeCat, 
   availableCategories, 
@@ -210,7 +192,6 @@ const EmptyState = ({
       animate={{ opacity: 1 }}
       className="text-center py-16 px-6"
     >
-      {/* Icono animado */}
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -224,7 +205,6 @@ const EmptyState = ({
         </svg>
       </motion.div>
       
-      {/* Mensaje principal */}
       <h3 className="text-3xl font-bold mb-4" style={{ color: themeColor }}>
         {activeCat === "All" ? "GALERÍA VACÍA" : `0 FOTOS EN "${activeCat.toUpperCase()}"`}
       </h3>
@@ -235,7 +215,6 @@ const EmptyState = ({
           : "Esta categoría está vacía. Prueba con alguna de estas:"}
       </p>
       
-      {/* Botones de categorías alternativas */}
       {otherCategories.length > 0 && (
         <div className="flex flex-wrap gap-3 justify-center mb-8">
           {otherCategories.map((cat: string) => (
@@ -257,7 +236,6 @@ const EmptyState = ({
         </div>
       )}
       
-      {/* Botón para ver todas */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -271,19 +249,20 @@ const EmptyState = ({
   );
 };
 
-// --- 3. COMPONENTE PRINCIPAL ---
-
 export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [activeCat, setActiveCat] = useState<string>("All");
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Carga de datos
   useEffect(() => {
     setIsLoading(true);
-    const query = `*[_type == "photo"] | order(_createdAt desc) { 
-      _id, title, country, category, "imageUrl": image.asset->url 
+    const query = `*[_type == "photo"] | order(order asc, _createdAt desc) { 
+      _id, 
+      title, 
+      country, 
+      "category": coalesce(category, "Uncategorized"),
+      "imageUrl": image.asset->url
     }`;
     
     client.fetch(query)
@@ -299,7 +278,6 @@ export default function Home() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Lógica de filtrado y color
   const filtered = useMemo(() => 
     activeCat === "All" ? photos : photos.filter(p => p.category === activeCat)
   , [activeCat, photos]);
@@ -313,11 +291,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#050505] text-white p-6 md:p-16 relative overflow-x-hidden selection:bg-white/20 selection:text-black">
       
-      {/* Marco Global Sutil */}
       <div className="fixed inset-0 border-[20px] border-transparent pointer-events-none z-50 transition-colors duration-1000" 
            style={{ borderImage: `linear-gradient(to bottom, ${themeColor}, transparent) 1`, opacity: 0.5 }} />
 
-      {/* HEADER */}
       <header className="pt-12 pb-8 text-center relative z-10 max-w-5xl mx-auto">
         <h1 className="text-5xl md:text-8xl font-sans tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 mb-6 drop-shadow-2xl">
           Dani Flamingo
@@ -329,12 +305,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ZONA DEL MAPA */}
       <div className="relative w-full h-[250px] md:h-[500px] mb-16 grayscale hover:grayscale-0 transition-all duration-1000">
         <WorldMap color={themeColor} />
       </div>
 
-      {/* MENÚ DE CATEGORÍAS */}
       <nav className="flex flex-wrap justify-center gap-6 md:gap-10 mb-20 max-w-6xl mx-auto px-4">
         {CATEGORIES.map((cat: string) => {
           const isActive = activeCat === cat;
@@ -358,7 +332,6 @@ export default function Home() {
         })}
       </nav>
 
-      {/* ESTADOS DE CARGA Y VACÍO */}
       {isLoading ? (
         <div className="text-center p-16">
           <div className="inline-block w-12 h-12 border-4 border-t-transparent border-[color:var(--theme-color)] rounded-full animate-spin" 
@@ -387,7 +360,6 @@ export default function Home() {
           getThemeColor={getThemeColor}
         />
       ) : (
-        /* GALERÍA */
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 max-w-7xl mx-auto pb-24">
           <AnimatePresence mode="popLayout">
             {filtered.map((photo: Photo, i: number) => (
@@ -399,7 +371,6 @@ export default function Home() {
                 <div className="relative aspect-[3/4] bg-[#111] overflow-hidden border border-white/5 transition-all duration-500 group-hover:border-[color:var(--neon)]"
                      style={{ '--neon': themeColor } as React.CSSProperties}>
                   
-                  {/* Imagen con Next.js Image */}
                   <Image 
                     src={photo.imageUrl} 
                     alt={photo.title}
@@ -409,7 +380,6 @@ export default function Home() {
                     loading="lazy"
                   />
                   
-                  {/* Overlay Información */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
                     <p className="text-[10px] tracking-[4px] uppercase mb-2" style={{ color: themeColor }}>
                       {photo.country || "WORLDWIDE"}
@@ -428,7 +398,6 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Información de depuración (solo en desarrollo) */}
       {process.env.NODE_ENV === 'development' && photos.length > 0 && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-xs p-3 rounded-lg opacity-70 hover:opacity-100 transition-opacity z-50">
           <p>Total fotos: {photos.length}</p>

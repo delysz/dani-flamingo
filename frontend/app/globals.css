@@ -2,8 +2,8 @@
 
 @layer base {
   :root {
-    --neon-blue: #00f2ff; /* Cian eléctrico */
-    --neon-pink: #ff0099; /* Rosa fucsia */
+    --neon-blue: #00f2ff;
+    --neon-pink: #ff0099;
     --bg-color: #050505;
   }
 
@@ -17,7 +17,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Scrollbar personalizado */
   ::-webkit-scrollbar {
     width: 10px;
   }
@@ -42,26 +41,6 @@
     color: var(--neon-pink);
     text-shadow: 0 0 10px rgba(255, 0, 153, 0.6);
   }
-  
-  /* Animaciones personalizadas */
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  .animate-shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
-  }
 }
 
 @keyframes float {
@@ -74,7 +53,6 @@
   100% { background-position: 200% 0; }
 }
 
-/* Selección de texto personalizada */
 ::selection {
   background-color: rgba(255, 255, 255, 0.2);
   color: inherit;
