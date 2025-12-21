@@ -141,22 +141,22 @@ export default function Home() {
       <div className="fixed inset-0 border-[8px] md:border-[12px] border-transparent pointer-events-none z-50 transition-all duration-1000" 
            style={{ borderImage: `linear-gradient(to bottom, ${themeColor}, transparent) 1`, opacity: 0.5 }} />
 
-      {/* --- HEADER MODIFICADO CON FLAMENCOS --- */}
+      {/* --- HEADER --- */}
       <header className="pt-16 pb-12 text-center relative z-10 max-w-7xl mx-auto flex flex-col items-center">
         
         {/* Contenedor Flex para Título + Flamencos */}
         <div className="flex items-center justify-center w-full gap-4 md:gap-12 lg:gap-20 mb-2">
           
-          {/* FLAMENCO IZQUIERDO (Reverse - Mirando a la derecha) */}
+          {/* FLAMENCO IZQUIERDO: Usamos flamin.png (mira a la derecha -> hacia el título) */}
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            className="hidden md:block relative w-24 h-24 lg:w-32 lg:h-32 transition-all duration-1000"
-            style={{ filter: `drop-shadow(0 0 15px ${themeColor}) brightness(1.2)` }}
+            className="hidden md:block relative w-20 h-20 lg:w-28 lg:h-28 transition-all duration-1000"
+            style={{ filter: `drop-shadow(0 0 25px #ff0099) brightness(1.1)` }} // GLOW PINK
           >
             <Image 
-              src="/flamin-reverse.png" 
+              src="/flamin.png" 
               alt="Flamingo Left" 
               fill 
               className="object-contain"
@@ -166,25 +166,26 @@ export default function Home() {
 
           {/* GRUPO DE TEXTO CENTRAL */}
           <div className="flex flex-col items-center">
-            <h1 className="text-5xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tighter text-white drop-shadow-2xl mix-blend-overlay opacity-90 leading-tight">
+            {/* Título reducido de tamaño (text-4xl a 7xl) */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-sans font-bold tracking-tighter text-white drop-shadow-2xl mix-blend-overlay opacity-90 leading-tight">
               DANI<br className="md:hidden" /> FLAMINGO
             </h1>
             
-            <p className="text-xs md:text-sm font-light tracking-[0.6em] md:tracking-[1em] text-white/60 uppercase mt-4 ml-1">
+            <p className="text-[10px] md:text-xs font-light tracking-[0.6em] md:tracking-[1em] text-white/60 uppercase mt-4 ml-1">
               Travel Photography
             </p>
           </div>
 
-          {/* FLAMENCO DERECHO (Normal - Mirando a la izquierda) */}
+          {/* FLAMENCO DERECHO: Usamos flamin-reverse.png (mira a la izquierda -> hacia el título) */}
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            className="hidden md:block relative w-24 h-24 lg:w-32 lg:h-32 transition-all duration-1000"
-            style={{ filter: `drop-shadow(0 0 15px ${themeColor}) brightness(1.2)` }}
+            className="hidden md:block relative w-20 h-20 lg:w-28 lg:h-28 transition-all duration-1000"
+            style={{ filter: `drop-shadow(0 0 25px #ff0099) brightness(1.1)` }} // GLOW PINK
           >
             <Image 
-              src="/flamin.png" 
+              src="/flamin-reverse.png" 
               alt="Flamingo Right" 
               fill 
               className="object-contain"
