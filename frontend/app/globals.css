@@ -1,32 +1,35 @@
 @import "tailwindcss";
 
 @layer base {
-  :root { --neon-primary: #ff1493; --neon-secondary: #00f2ff; }
-  
-  /* Efecto de Grano de Película Analógico */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
-    opacity: 0.05;
-    pointer-events: none;
-    z-index: 150;
-    filter: contrast(150%) brightness(100%);
+  :root {
+    /* Colores extraídos de tus imágenes */
+    --neon-blue: #00f2ff; /* Cian eléctrico */
+    --neon-pink: #ff0099; /* Rosa fucsia */
+    --bg-color: #050505;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: white;
+    overflow-x: hidden;
+  }
+
+  /* Marco Global mejorado */
+  .global-frame {
+    position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    border: 18px solid transparent;
+    /* El borde cambia suavemente entre azul y rosa */
+    border-image: linear-gradient(to bottom, var(--neon-blue), var(--neon-pink)) 1;
+    opacity: 0.8;
   }
 }
 
-/* Efecto Laser Scanner mejorado */
-@utility scan-line {
-  position: absolute;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to bottom, transparent, var(--neon-primary), transparent);
-  box-shadow: 0 0 20px var(--neon-primary);
-  top: 0;
-  left: 0;
-  animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  opacity: 0;
+@utility text-glow-blue {
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.6);
+}
+
+@utility text-glow-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 0, 153, 0.6);
 }
