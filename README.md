@@ -13,7 +13,8 @@
 ### 🔗 Dani Flamingo
 👉 [Ver el proyecto aquí](https://dani-flamingo.vercel.app/)
 
-💡 Sobre el Proyecto
+##💡 Sobre el Proyecto
+
 Este proyecto redefine la experiencia de un portfolio tradicional. En lugar de una cuadrícula estática, ofrece una inmersión visual donde el usuario explora el mundo a través de un globo terráqueo 3D interactivo.
 
 El objetivo principal fue combinar arte visual y rendimiento técnico, logrando animaciones complejas a 60 FPS y una estética de neón que reacciona dinámicamente al contenido visualizado.
