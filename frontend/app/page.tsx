@@ -135,12 +135,11 @@ const getThemeColor = (cat: string): {
   return colors[cat as keyof typeof colors] || colors.All;
 };
 
-// --- PARTÍCULAS AVANZADAS ---
+// --- PARTÍCULAS SIMPLIFICADAS (sin líneas) ---
 const AdvancedParticles = ({ color }: { color: any }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<any[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const frameRef = useRef<number | null>(null); // CORRECCIÓN: agregar null como valor inicial
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -156,48 +155,30 @@ const AdvancedParticles = ({ color }: { color: any }) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Crear partículas avanzadas
+    // Crear partículas simplificadas
     const createParticles = () => {
       particlesRef.current = [];
-      const particleCount = Math.min(200, Math.floor((window.innerWidth * window.innerHeight) / 8000));
+      const particleCount = Math.min(150, Math.floor((window.innerWidth * window.innerHeight) / 10000));
       
       for (let i = 0; i < particleCount; i++) {
         particlesRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          size: Math.random() * 3 + 1,
-          speedX: (Math.random() - 0.5) * 0.8,
-          speedY: (Math.random() - 0.5) * 0.8,
+          size: Math.random() * 2 + 0.5,
+          speedX: (Math.random() - 0.5) * 0.5,
+          speedY: (Math.random() - 0.5) * 0.5,
           color: color.particles[Math.floor(Math.random() * color.particles.length)],
-          alpha: Math.random() * 0.4 + 0.1,
-          life: 1,
-          trail: Array(5).fill(null).map(() => ({ x: 0, y: 0 })),
-          type: Math.random() > 0.7 ? 'spark' : 'normal',
-          wave: Math.random() * Math.PI * 2
+          alpha: Math.random() * 0.3 + 0.1,
+          type: Math.random() > 0.8 ? 'spark' : 'normal',
         });
       }
     };
     createParticles();
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       particlesRef.current.forEach(particle => {
-        // Actualizar trail
-        particle.trail.pop();
-        particle.trail.unshift({ x: particle.x, y: particle.y });
-        
-        // Efecto de onda
-        if (particle.type === 'spark') {
-          particle.x += Math.sin(particle.wave) * 0.5;
-          particle.wave += 0.05;
-        }
-        
         // Movimiento
         particle.x += particle.speedX;
         particle.y += particle.speedY;
@@ -205,28 +186,6 @@ const AdvancedParticles = ({ color }: { color: any }) => {
         // Rebote
         if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
-        
-        // Atracción al mouse
-        const dx = mouseRef.current.x - particle.x;
-        const dy = mouseRef.current.y - particle.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 150) {
-          const force = 0.03;
-          particle.x += dx * force;
-          particle.y += dy * force;
-        }
-        
-        // Dibujar trail
-        particle.trail.forEach((pos: { x: number, y: number }, i: number) => {
-          if (pos.x === 0 && pos.y === 0) return;
-          
-          const trailAlpha = particle.alpha * (1 - i / particle.trail.length);
-          ctx.beginPath();
-          ctx.arc(pos.x, pos.y, particle.size * 0.5, 0, Math.PI * 2);
-          ctx.fillStyle = particle.color.replace(')', `, ${trailAlpha})`).replace('rgb', 'rgba');
-          ctx.fill();
-        });
         
         // Dibujar partícula
         ctx.beginPath();
@@ -236,7 +195,7 @@ const AdvancedParticles = ({ color }: { color: any }) => {
           // Efecto de chispa
           const gradient = ctx.createRadialGradient(
             particle.x, particle.y, 0,
-            particle.x, particle.y, particle.size * 2
+            particle.x, particle.y, particle.size * 3
           );
           gradient.addColorStop(0, particle.color);
           gradient.addColorStop(1, particle.color.replace(')', ', 0)').replace('rgb', 'rgba'));
@@ -246,45 +205,7 @@ const AdvancedParticles = ({ color }: { color: any }) => {
         }
         
         ctx.fill();
-        
-        // Conectar partículas
-        particlesRef.current.forEach(otherParticle => {
-          const dx = particle.x - otherParticle.x;
-          const dy = particle.y - otherParticle.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particle.x, particle.y);
-            ctx.lineTo(otherParticle.x, otherParticle.y);
-            
-            const lineAlpha = 0.2 * (1 - distance / 120);
-            ctx.strokeStyle = color.main.replace(')', `, ${lineAlpha})`).replace('rgb', 'rgba');
-            ctx.lineWidth = 0.3;
-            ctx.stroke();
-          }
-        });
       });
-      
-      // Efectos especiales
-      if (Math.random() > 0.98) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        
-        // Destello
-        for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * Math.PI * 2;
-          const px = x + Math.cos(angle) * 30;
-          const py = y + Math.sin(angle) * 30;
-          
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(px, py);
-          ctx.strokeStyle = color.main;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
       
       frameRef.current = requestAnimationFrame(animate);
     };
@@ -292,7 +213,6 @@ const AdvancedParticles = ({ color }: { color: any }) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('mousemove', handleMouseMove);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [color]);
@@ -454,37 +374,45 @@ const NeonText = ({ children, color }: { children: React.ReactNode; color: any }
   );
 };
 
-// --- EFECTO DE GLITCH ---
+// --- EFECTO DE GLITCH MEJORADO (arreglado) ---
 const GlitchEffect = ({ text, color }: { text: string; color: any }) => {
   const [glitch, setGlitch] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
+      if (Math.random() > 0.8) {
         setGlitch(true);
         setTimeout(() => setGlitch(false), 100);
       }
-    }, 3000);
+    }, 4000);
     
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="relative inline-block">
-      <span className={`relative z-10 ${glitch ? 'opacity-0' : 'opacity-100'}`}>
+      <span className="relative z-10 opacity-100">
         {text}
       </span>
       {glitch && (
         <>
           <span 
-            className="absolute left-0 top-0 text-red-400 opacity-80"
-            style={{ transform: 'translate(-2px, 2px)' }}
+            className="absolute left-0 top-0 opacity-70"
+            style={{ 
+              color: color.main,
+              transform: 'translate(-1px, 1px)',
+              filter: 'blur(0.5px)'
+            }}
           >
             {text}
           </span>
           <span 
-            className="absolute left-0 top-0 text-cyan-400 opacity-80"
-            style={{ transform: 'translate(2px, -2px)' }}
+            className="absolute left-0 top-0 opacity-70"
+            style={{ 
+              color: color.light,
+              transform: 'translate(1px, -1px)',
+              filter: 'blur(0.5px)'
+            }}
           >
             {text}
           </span>
@@ -1012,7 +940,7 @@ export default function Home() {
 
   return (
     <main className={`min-h-screen bg-black text-white overflow-x-hidden ${immersiveMode ? 'immersive' : ''}`}>
-      {/* Partículas avanzadas */}
+      {/* Partículas simplificadas (sin líneas) */}
       <AdvancedParticles color={themeColor} />
       
       {/* Modo inmersivo toggle */}
@@ -1081,7 +1009,7 @@ export default function Home() {
               transition={{ duration: 1.5 }}
               className="text-center"
             >
-              {/* Título con efecto glitch */}
+              {/* Título con efecto glitch corregido */}
               <div className="mb-12 relative">
                 <motion.div
                   initial={{ scale: 0 }}
@@ -1090,12 +1018,45 @@ export default function Home() {
                   className="inline-block"
                 >
                   <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-4">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
-                      <GlitchEffect text="DANI" color={themeColor} />
+                    <span className="relative">
+                      {/* "DANI" con color blanco sólido y efecto de brillo */}
+                      <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/90">
+                        DANI
+                      </span>
+                      {/* Efecto de brillo superpuesto */}
+                      <motion.span
+                        className="absolute inset-0 bg-clip-text text-transparent"
+                        style={{
+                          background: themeColor.gradient,
+                          backgroundSize: '200% 100%'
+                        }}
+                        animate={{
+                          backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                          opacity: [0.3, 0.7, 0.3]
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      >
+                        DANI
+                      </motion.span>
                     </span>
                     <br />
                     <NeonText color={themeColor}>
-                      <GlitchEffect text="FLAMINGO" color={themeColor} />
+                      <span className="relative">
+                        {/* "FLAMINGO" con el color del tema */}
+                        <span 
+                          className="bg-clip-text text-transparent"
+                          style={{
+                            background: themeColor.gradient,
+                            backgroundSize: '200% 100%'
+                          }}
+                        >
+                          FLAMINGO
+                        </span>
+                      </span>
                     </NeonText>
                   </h1>
                 </motion.div>
