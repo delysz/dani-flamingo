@@ -1,39 +1,17 @@
 "use client"
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
+import { motion, AnimatePresence, animate } from 'framer-motion'
 import { client } from '@/lib/sanity'
 import Image from 'next/image'
 import { 
   Globe2, MapPin, Pause, Play, RotateCcw, 
   Instagram, Mail, ShoppingBag, ArrowRight,
-  Zap, Sparkles, Camera, Navigation, X,
+  Zap, Sparkles, Camera, X,
   Maximize2, Minimize2, Volume2, VolumeX,
   Download, Heart, Share2, ChevronLeft, ChevronRight,
-  Filter, Grid, List, Settings,
-  Sparkle, Zap as Lightning, Target, Rocket,
-  Palette, Music, Video, Image as ImageIcon,
-  Eye, EyeOff, Lock, Unlock, Star,
-  Award, Trophy, Crown, Shield, Sword,
-  RefreshCw, Layers, Box, Cpu,
-  Wind, Waves, Flame, Cloud,
-  PlayCircle, Radio, Headphones, Disc,
-  Infinity as InfinityIcon, Orbit,
-  Satellite, Atom, Brain,
-  Shuffle, ZapOff, Eye as EyeIcon,
-  Palette as PaletteIcon, Music2,
-  Watch, Clock, Battery,
-  Wifi, Bluetooth,
-  Grid3x3, Hexagon, Octagon,
-  Target as TargetIcon, Crosshair,
-  Scan, QrCode, BarChart3,
-  PieChart, Activity, TrendingUp,
-  User, Users, UserPlus,
-  MessageCircle, MessageSquare,
-  Phone, PhoneCall, PhoneForwarded,
-  PhoneIncoming, PhoneOutgoing,
-  Voicemail, Video as VideoIcon,
-  VideoOff, Mic, MicOff,
-  Headset, Speaker
+  Filter, Grid, List,
+  Sparkle, EyeIcon,
+  Music2
 } from 'lucide-react'
 
 // --- TIPOS ---
@@ -162,7 +140,7 @@ const AdvancedParticles = ({ color }: { color: any }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<any[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null); // CORRECCIÓN: agregar null como valor inicial
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -239,7 +217,7 @@ const AdvancedParticles = ({ color }: { color: any }) => {
           particle.y += dy * force;
         }
         
-        // Dibujar trail - CORRECCIÓN DEL ERROR DE TIPADO
+        // Dibujar trail
         particle.trail.forEach((pos: { x: number, y: number }, i: number) => {
           if (pos.x === 0 && pos.y === 0) return;
           
@@ -310,7 +288,7 @@ const AdvancedParticles = ({ color }: { color: any }) => {
       
       frameRef.current = requestAnimationFrame(animate);
     };
-    animate();
+    frameRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -360,7 +338,7 @@ const Carousel3D = ({ photos, themeColor }: { photos: Photo[], themeColor: any }
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4 flex items-center justify-center gap-3">
-            <Orbit className="w-8 h-8" style={{ color: themeColor.main }} />
+            <Globe2 className="w-8 h-8" style={{ color: themeColor.main }} />
             <span>Featured Visuals</span>
           </h2>
           <p className="text-white/60 max-w-2xl mx-auto">
@@ -527,7 +505,7 @@ const ImmersiveModeToggle = ({ enabled, onToggle, color }: { enabled: boolean, o
       animate={enabled ? { rotate: 360 } : { rotate: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {enabled ? <EyeOff className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+      {enabled ? <Sparkle className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
     </motion.button>
   );
 };
