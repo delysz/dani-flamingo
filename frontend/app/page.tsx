@@ -2,19 +2,30 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { client } from '@/lib/sanity'
+import { COUNTRY_COORDS } from '@/lib/countries'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { 
   Globe2, MapPin, Pause, Play, RotateCcw, 
-  Instagram, Mail, ShoppingBag, ArrowRight 
+  Instagram, Mail, ShoppingBag, ArrowRight,
+  Zap, Sparkles, Camera, Navigation
 } from 'lucide-react'
-import { useSpring, animated, to } from '@react-spring/web' 
-import { useInView } from 'react-intersection-observer' 
 
-// --- IMPORTACIÓN DINÁMICA DEL GLOBO ---
+// Importación dinámica del globo
 const Globe = dynamic(() => import('react-globe.gl'), { 
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-[10px] tracking-widest text-white/30 uppercase">INITIALIZING SATELLITE...</div>
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center">
+      <motion.div
+        className="relative"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+      >
+        <div className="w-8 h-8 border-2 border-dashed border-white/20 rounded-full" />
+        <div className="absolute inset-0 w-8 h-8 border-t-2 border-[#ff0099] rounded-full" />
+      </motion.div>
+    </div>
+  )
 });
 
 // --- TIPOS ---
@@ -26,120 +37,371 @@ interface Photo {
   category: string;
 }
 
-// --- DICCIONARIO DE COORDENADAS (INTEGRADO AQUÍ MISMO) ---
-const COUNTRY_COORDS: Record<string, { lat: number; lng: number }> = {
-  // AMÉRICA
-  "United States": { lat: 37.0902, lng: -95.7129 }, "USA": { lat: 37.0902, lng: -95.7129 },
-  "Canada": { lat: 56.1304, lng: -106.3468 }, "Mexico": { lat: 23.6345, lng: -102.5528 },
-  "Brazil": { lat: -14.2350, lng: -51.9253 }, "Argentina": { lat: -38.4161, lng: -63.6167 },
-  "Chile": { lat: -35.6751, lng: -71.5430 }, "Colombia": { lat: 4.5709, lng: -74.2973 },
-  "Peru": { lat: -9.1900, lng: -75.0152 }, "Cuba": { lat: 21.5218, lng: -77.7812 },
-  // EUROPA
-  "Spain": { lat: 40.4637, lng: -3.7492 }, "France": { lat: 46.2276, lng: 2.2137 },
-  "Germany": { lat: 51.1657, lng: 10.4515 }, "Italy": { lat: 41.8719, lng: 12.5674 },
-  "United Kingdom": { lat: 55.3781, lng: -3.4360 }, "UK": { lat: 55.3781, lng: -3.4360 },
-  "Portugal": { lat: 39.3999, lng: -8.2245 }, "Netherlands": { lat: 52.1326, lng: 5.2913 },
-  "Belgium": { lat: 50.5039, lng: 4.4699 }, "Switzerland": { lat: 46.8182, lng: 8.2275 },
-  "Greece": { lat: 39.0742, lng: 21.8243 }, "Sweden": { lat: 60.1282, lng: 18.6435 },
-  // ASIA
-  "Japan": { lat: 36.2048, lng: 138.2529 }, "China": { lat: 35.8617, lng: 104.1954 },
-  "India": { lat: 20.5937, lng: 78.9629 }, "Thailand": { lat: 15.8700, lng: 100.9925 },
-  "Indonesia": { lat: -0.7893, lng: 113.9213 }, "South Korea": { lat: 35.9078, lng: 127.7669 },
-  "Singapore": { lat: 1.3521, lng: 103.8198 },
-  // ÁFRICA & OCEANÍA
-  "Morocco": { lat: 31.7917, lng: -7.0926 }, "South Africa": { lat: -30.5595, lng: 22.9375 },
-  "Egypt": { lat: 26.8206, lng: 30.8025 }, "Australia": { lat: -25.2744, lng: 133.7751 },
-  "New Zealand": { lat: -40.9006, lng: 174.8860 },
-};
-
 const CATEGORIES = [
   "All", "Beach", "Street", "Plants", "People", "Animals", "Food", "Abstract", "Sofia", "Sofia's Artwork"
 ];
 
-// --- PALETA DE COLORES ---
-const getThemeColor = (cat: string): string => {
-  switch (cat) {
-    case "Sofia": case "Sofia's Artwork": return "#ff0099"; 
-    case "Beach": return "#00f2ff"; 
-    case "Street": return "#ff4d00"; 
-    case "Plants": return "#00ff41"; 
-    case "People": return "#bd00ff"; 
-    case "Animals": return "#ffc400"; 
-    case "Food": return "#ff0040"; 
-    case "Abstract": return "#ffffff"; 
-    default: return "#00f2ff"; 
-  }
+// --- PALETA DE COLORES MEJORADA ---
+const getThemeColor = (cat: string): { main: string; light: string; dark: string; glow: string } => {
+  const colors = {
+    "Sofia": { main: "#ff0099", light: "#ff66cc", dark: "#cc0077", glow: "#ff0099" },
+    "Sofia's Artwork": { main: "#ff0099", light: "#ff66cc", dark: "#cc0077", glow: "#ff0099" },
+    "Beach": { main: "#00f2ff", light: "#66f7ff", dark: "#00c2cc", glow: "#00f2ff" },
+    "Street": { main: "#ff4d00", light: "#ff8040", dark: "#cc3e00", glow: "#ff4d00" },
+    "Plants": { main: "#00ff41", light: "#66ff80", dark: "#00cc34", glow: "#00ff41" },
+    "People": { main: "#bd00ff", light: "#d366ff", dark: "#9400cc", glow: "#bd00ff" },
+    "Animals": { main: "#ffc400", light: "#ffd966", dark: "#cc9d00", glow: "#ffc400" },
+    "Food": { main: "#ff0040", light: "#ff6699", dark: "#cc0033", glow: "#ff0040" },
+    "Abstract": { main: "#ffffff", light: "#ffffff", dark: "#cccccc", glow: "#ffffff" },
+    "All": { main: "#00f2ff", light: "#66f7ff", dark: "#00c2cc", glow: "#00f2ff" }
+  };
+  return colors[cat as keyof typeof colors] || colors.All;
 };
 
-// --- COMPONENTE: CONTADOR FÍSICAS ---
-const PhysicsCounter = ({ n }: { n: number }) => {
-  const { number } = useSpring({
-    from: { number: 0 },
-    number: n,
-    delay: 200,
-    config: { mass: 1, tension: 20, friction: 10 },
-  });
-  return <animated.span>{number.to((n) => n.toFixed(0))}</animated.span>;
+// --- CONTADOR FÍSICO MEJORADO ---
+const PhysicsCounter = ({ n, label, color }: { n: number, label: string, color: string }) => {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, Math.round);
+  
+  useEffect(() => {
+    const controls = animate(count, n, { 
+      duration: 2.5, 
+      ease: "circOut",
+      onComplete: () => {
+        // Efecto sutil al completar
+        if (n > 10) {
+          // Podríamos agregar un efecto de partículas aquí
+        }
+      }
+    });
+    return controls.stop;
+  }, [n, count]);
+
+  return (
+    <div className="text-center">
+      <motion.div 
+        className="text-4xl md:text-5xl font-bold mb-2 relative"
+        style={{ color }}
+        whileHover={{ scale: 1.05 }}
+      >
+        <motion.span>{rounded}</motion.span>+
+        <motion.div 
+          className="absolute -inset-4 rounded-full opacity-0 hover:opacity-20 transition-opacity"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 70%)` }}
+        />
+      </motion.div>
+      <div className="text-xs uppercase tracking-widest text-white/60">{label}</div>
+    </div>
+  );
 };
 
-// --- COMPONENTE: TARJETA 3D TILT ---
-const calc = (x: number, y: number) => [-(y - window.innerHeight / 2) / 20, (x - window.innerWidth / 2) / 20, 1.1];
-const trans = (x: number, y: number, s: number) => `perspective(600px) rotateX(${x}deg) rotateY(${y}deg) scale(${s})`;
+// --- MARCO ESPECTACULAR ---
+const AnimatedFrame = ({ color }: { color: string }) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      setMousePosition({ x, y });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
+  return (
+    <>
+      {/* Marco exterior con efecto de neón */}
+      <div className="fixed inset-0 z-40 pointer-events-none overflow-hidden">
+        {/* Esquina superior izquierda - Diseño angular */}
+        <div className="absolute top-0 left-0 w-32 h-32">
+          <div className="absolute top-0 left-0 w-24 h-1 bg-gradient-to-r from-transparent to-white/30" />
+          <div className="absolute top-0 left-0 w-1 h-24 bg-gradient-to-b from-transparent to-white/30" />
+          
+          {/* Decoración angular */}
+          <motion.div 
+            className="absolute top-6 left-6 w-12 h-12"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="w-full h-full border border-dashed border-white/10 rounded-full" />
+          </motion.div>
+          
+          {/* Punto brillante */}
+          <motion.div 
+            className="absolute top-8 left-8 w-2 h-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </div>
+        
+        {/* Esquina superior derecha */}
+        <div className="absolute top-0 right-0 w-32 h-32">
+          <div className="absolute top-0 right-0 w-24 h-1 bg-gradient-to-l from-transparent to-white/30" />
+          <div className="absolute top-0 right-0 w-1 h-24 bg-gradient-to-b from-transparent to-white/30" />
+          
+          <motion.div 
+            className="absolute top-6 right-6 w-12 h-12"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="w-full h-full border border-dashed border-white/10 rounded-full" />
+          </motion.div>
+          
+          <motion.div 
+            className="absolute top-8 right-8 w-2 h-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          />
+        </div>
+        
+        {/* Esquina inferior izquierda */}
+        <div className="absolute bottom-0 left-0 w-32 h-32">
+          <div className="absolute bottom-0 left-0 w-24 h-1 bg-gradient-to-r from-transparent to-white/30" />
+          <div className="absolute bottom-0 left-0 w-1 h-24 bg-gradient-to-t from-transparent to-white/30" />
+          
+          <motion.div 
+            className="absolute bottom-6 left-6 w-12 h-12"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="w-full h-full border border-dotted border-white/5 rounded-full" />
+          </motion.div>
+          
+          <motion.div 
+            className="absolute bottom-8 left-8 w-2 h-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+          />
+        </div>
+        
+        {/* Esquina inferior derecha */}
+        <div className="absolute bottom-0 right-0 w-32 h-32">
+          <div className="absolute bottom-0 right-0 w-24 h-1 bg-gradient-to-l from-transparent to-white/30" />
+          <div className="absolute bottom-0 right-0 w-1 h-24 bg-gradient-to-t from-transparent to-white/30" />
+          
+          <motion.div 
+            className="absolute bottom-6 right-6 w-12 h-12"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="w-full h-full border border-dotted border-white/5 rounded-full" />
+          </motion.div>
+          
+          <motion.div 
+            className="absolute bottom-8 right-8 w-2 h-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+          />
+        </div>
+        
+        {/* Líneas horizontales con efecto de escaneo */}
+        <motion.div 
+          className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          style={{ top: `${mousePosition.y}%` }}
+          animate={{ opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        
+        {/* Líneas verticales con efecto de escaneo */}
+        <motion.div 
+          className="absolute top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-white/10 to-transparent"
+          style={{ left: `${mousePosition.x}%` }}
+          animate={{ opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+        />
+        
+        {/* Partículas flotantes */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-[2px] h-[2px] rounded-full bg-white/20"
+            style={{
+              left: `${10 + (i * 12)}%`,
+              top: `${20 + (i * 8)}%`,
+            }}
+            animate={{
+              y: [0, -20, 0],
+              x: [0, 10, 0],
+            }}
+            transition={{
+              duration: 3 + i,
+              repeat: Infinity,
+              delay: i * 0.5,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Efecto de brillo en las esquinas */}
+      <div className="fixed inset-0 z-30 pointer-events-none">
+        <div 
+          className="absolute top-0 left-0 w-64 h-64 -translate-x-1/2 -translate-y-1/2 opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 50%)` }}
+        />
+        <div 
+          className="absolute top-0 right-0 w-64 h-64 translate-x-1/2 -translate-y-1/2 opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 50%)` }}
+        />
+        <div 
+          className="absolute bottom-0 left-0 w-64 h-64 -translate-x-1/2 translate-y-1/2 opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 50%)` }}
+        />
+        <div 
+          className="absolute bottom-0 right-0 w-64 h-64 translate-x-1/2 translatey-1/2 opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 50%)` }}
+        />
+      </div>
+    </>
+  );
+};
+
+// --- PHOTO CARD 3D MEJORADA ---
 const PhotoCard3D = ({ photo, index, themeColor, delay }: any) => {
-  const [props, set] = useSpring(() => ({ xys: [0, 0, 1], config: { mass: 5, tension: 350, friction: 40 } }));
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
+      ref={cardRef}
+      initial={{ opacity: 0, y: 30, rotateX: 10 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.5, delay: delay * 0.05 }}
-      className="relative group z-10 cursor-pointer"
+      transition={{ duration: 0.6, delay: delay * 0.05, type: "spring", stiffness: 100 }}
+      className="relative group cursor-pointer perspective-1000"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <animated.div
-        onMouseMove={({ clientX: x, clientY: y }) => set({ xys: calc(x, y) })}
-        onMouseLeave={() => set({ xys: [0, 0, 1] })}
-        style={{ transform: to(props.xys, trans) }}
-        className="relative aspect-[4/5] bg-[#0a0a0a] overflow-hidden border border-white/10 transition-colors duration-500 hover:border-white/40"
-      >
-        <Image 
-          src={photo.imageUrl} alt={photo.title} fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover transition-all duration-700 ease-out grayscale brightness-[0.8] contrast-[1.1] group-hover:grayscale-0 group-hover:brightness-100" 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
-        
-        <div className="absolute inset-x-0 bottom-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-start pointer-events-none">
-           <div className="flex items-center gap-2 mb-2">
-             <MapPin className="w-3 h-3" style={{ color: themeColor }} />
-             <span className="text-[10px] uppercase tracking-[0.2em] text-white/80">{photo.country || "Worldwide"}</span>
-           </div>
-           <h3 className="text-xl font-bold uppercase text-white tracking-wide leading-none">{photo.title}</h3>
-        </div>
-
-        <div className="absolute top-4 right-4 px-2 py-1 bg-black/50 backdrop-blur-md border border-white/10 text-[9px] uppercase tracking-widest text-white/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          {photo.category}
-        </div>
-      </animated.div>
+      {/* Efecto de neón alrededor */}
+      <motion.div 
+        className="absolute -inset-2 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"
+        style={{ background: themeColor.main }}
+        animate={isHovered ? { 
+          scale: [1, 1.02, 1],
+          opacity: [0, 0.3, 0]
+        } : {}}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
       
-      <div className="flex justify-between items-center mt-3 px-1 opacity-40 group-hover:opacity-100 transition-opacity duration-500">
-         <div className="h-[1px] w-8 bg-current" style={{ color: themeColor }} />
-         <span className="text-[10px] font-mono text-white/50">{(index + 1).toString().padStart(2, '0')}</span>
+      {/* Contenedor principal con efecto 3D */}
+      <div className="relative bg-gradient-to-br from-black/80 to-gray-900/80 rounded-xl overflow-hidden border transition-all duration-500 group-hover:scale-[1.02]"
+           style={{ 
+             borderColor: isHovered ? themeColor.main : 'rgba(255,255,255,0.1)',
+             transform: isHovered ? 'translateZ(20px)' : 'translateZ(0)',
+             boxShadow: isHovered ? 
+               `0 20px 40px ${themeColor.main}30, inset 0 1px 0 ${themeColor.main}20` : 
+               '0 4px 20px rgba(0,0,0,0.5)'
+           }}>
+        
+        {/* Imagen con efecto de parallax */}
+        <div className="relative aspect-[4/5] overflow-hidden">
+          <motion.div 
+            animate={isHovered ? { scale: 1.1 } : { scale: 1 }}
+            transition={{ duration: 0.7 }}
+            className="absolute inset-0"
+          >
+            <Image 
+              src={photo.imageUrl} 
+              alt={photo.title} 
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-all duration-700"
+              style={{ 
+                filter: isHovered ? 
+                  'grayscale(0) brightness(1.1) contrast(1.05)' : 
+                  'grayscale(0.3) brightness(0.9) contrast(1.1)' 
+              }}
+            />
+          </motion.div>
+          
+          {/* Overlay de gradiente */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-500" />
+          
+          {/* Efecto de luz */}
+          <motion.div 
+            className="absolute inset-0 opacity-0 group-hover:opacity-30"
+            style={{ 
+              background: `linear-gradient(45deg, transparent 30%, ${themeColor.main} 50%, transparent 70%)` 
+            }}
+            animate={isHovered ? { x: ['0%', '200%'] } : {}}
+            transition={isHovered ? { duration: 1.5, repeat: Infinity } : {}}
+          />
+          
+          {/* Badge de categoría */}
+          <div className="absolute top-4 left-4">
+            <span className="px-3 py-1.5 text-[10px] uppercase tracking-widest rounded-full font-bold backdrop-blur-md"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColor.main}20, ${themeColor.main}40)`, 
+                    color: themeColor.main, 
+                    border: `1px solid ${themeColor.main}60`,
+                    boxShadow: `0 0 20px ${themeColor.main}30`
+                  }}>
+              {photo.category}
+            </span>
+          </div>
+          
+          {/* Contador */}
+          <div className="absolute top-4 right-4">
+            <span className="text-sm font-mono px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-md"
+                  style={{ color: themeColor.main }}>
+              #{String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+        
+        {/* Contenido */}
+        <div className="p-6">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/60 mb-3">
+            <MapPin className="w-3 h-3" style={{ color: themeColor.main }} />
+            <span>{photo.country || "WORLDWIDE"}</span>
+          </div>
+          
+          <h3 className="text-xl font-bold text-white mb-3 leading-tight group-hover:tracking-wide transition-all duration-300">
+            {photo.title}
+          </h3>
+          
+          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <motion.div 
+                className="w-2 h-2 rounded-full"
+                style={{ background: themeColor.main }}
+                animate={{ 
+                  scale: [1, 1.5, 1],
+                  boxShadow: [`0 0 5px ${themeColor.main}`, `0 0 15px ${themeColor.main}`, `0 0 5px ${themeColor.main}`]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-xs uppercase tracking-widest text-white/60">Hover to explore</span>
+            </div>
+            
+            <motion.div 
+              className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+              style={{ background: themeColor.main }}
+              whileHover={{ scale: 1.2, rotate: 90 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <ArrowRight className="w-4 h-4 text-black" />
+            </motion.div>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
 };
 
-// --- GLOBO 3D INTELIGENTE (RESPONSIVE & CHINCHETAS REALES) ---
-const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
+// --- GLOBO 3D MEJORADO ---
+const GlobeSection = ({ color, photos }: { color: any, photos: Photo[] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
   const [isRotating, setIsRotating] = useState(true);
+  const [globeLoaded, setGlobeLoaded] = useState(false);
 
-  // Ajuste de tamaño responsive
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -149,94 +411,190 @@ const GlobeSection = ({ color, photos }: { color: string, photos: Photo[] }) => 
         });
       }
     };
-    updateSize(); 
+    updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // GENERADOR DE CHINCHETAS (PUNTOS)
   const locationsData = useMemo(() => {
     const uniqueCountries = Array.from(new Set(photos.map(p => p.country).filter(Boolean)));
-    // Usamos reduce para limpiar nulos y contentar a TypeScript
     return uniqueCountries.reduce((acc: any[], countryName) => {
       const coords = COUNTRY_COORDS[countryName as string];
       if (coords) {
         acc.push({
-          lat: coords.lat, lng: coords.lng,
-          label: countryName, color: color, size: 0.5
+          lat: coords.lat,
+          lng: coords.lng,
+          label: countryName,
+          color: color.main,
+          size: 0.5,
+          photos: photos.filter(p => p.country === countryName).length
         });
       }
       return acc;
     }, []);
   }, [photos, color]);
 
-  // Arcos decorativos
-  const arcsData = useMemo(() => Array.from({ length: 15 }, () => ({
-    startLat: (Math.random() - 0.5) * 160, startLng: (Math.random() - 0.5) * 360,
-    endLat: (Math.random() - 0.5) * 160, endLng: (Math.random() - 0.5) * 360,
-    color: [color, 'rgba(255,255,255,0)']
-  })), [color]);
+  const arcsData = useMemo(() => 
+    Array.from({ length: 20 }, () => ({
+      startLat: (Math.random() - 0.5) * 160,
+      startLng: (Math.random() - 0.5) * 360,
+      endLat: (Math.random() - 0.5) * 160,
+      endLng: (Math.random() - 0.5) * 360,
+      color: [color.main, 'rgba(255,255,255,0)']
+    })), [color]
+  );
 
   useEffect(() => {
-    if (globeRef.current && inView) {
+    if (globeRef.current && globeLoaded) {
       globeRef.current.controls().autoRotate = isRotating;
-      globeRef.current.controls().autoRotateSpeed = 0.6;
-      globeRef.current.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
+      globeRef.current.controls().autoRotateSpeed = 0.5;
+      globeRef.current.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 1000);
     }
-  }, [isRotating, inView]);
+  }, [isRotating, globeLoaded]);
 
   return (
-    <section ref={ref} className="w-full mb-24 flex flex-col items-center px-4">
-       <div className="flex items-center gap-4 mb-8 w-full max-w-4xl">
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/20" />
-          <h2 className="text-xl md:text-2xl font-bold uppercase tracking-widest text-white/90 flex items-center gap-3">
-             <Globe2 className="w-5 h-5 opacity-50" /> Global Locations
+    <section className="w-full mb-32 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Encabezado de la sección */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 flex items-center justify-center gap-3">
+            <Globe2 className="w-8 h-8" style={{ color: color.main }} />
+            <span>Global Visual Journey</span>
           </h2>
-          <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/20" />
-       </div>
-       
-       <div ref={containerRef} className="relative w-full max-w-4xl h-[400px] md:h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-[#080808] shadow-2xl mx-auto flex justify-center items-center">
-         
-         {inView && (
-            <>
-              <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                <button onClick={() => setIsRotating(!isRotating)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
-                  {isRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                </button>
-                <button onClick={() => globeRef.current?.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 1000)} className="p-2 rounded-full bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all">
-                  <RotateCcw className="w-3 h-3" />
-                </button>
-              </div>
+          <p className="text-white/60 max-w-2xl mx-auto">
+            Interactive 3D visualization showing the geographical distribution of photographic work
+          </p>
+        </motion.div>
 
-              {dimensions.width > 1 && (
-                <Globe
-                  ref={globeRef}
-                  width={dimensions.width}
-                  height={dimensions.height}
-                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-                  backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-                  pointsData={locationsData} 
-                  pointColor="color" pointAltitude={0.07} pointRadius={0.6} pointResolution={2}
-                  labelsData={locationsData}
-                  labelLat="lat" labelLng="lng" labelText="label"
-                  labelSize={1.5} labelDotRadius={0.5} labelColor={() => "rgba(255,255,255,0.75)"}
-                  labelResolution={2}
-                  ringsData={locationsData}
-                  ringColor={() => color} ringMaxRadius={3} ringPropagationSpeed={2} ringRepeatPeriod={800}
-                  arcsData={arcsData}
-                  arcColor="color" arcDashLength={0.4} arcDashGap={2} arcDashAnimateTime={2000} arcStroke={0.3}
-                  atmosphereColor={color} atmosphereAltitude={0.15}
-                  backgroundColor="rgba(0,0,0,0)"
-                />
-              )}
-              <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none" />
-            </>
-         )}
-         
-         {!inView && (
-            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: color }} />
-         )}
-       </div>
+        {/* Contenedor del globo */}
+        <div ref={containerRef} className="relative w-full h-[500px] md:h-[600px] rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-black/50 to-gray-900/30">
+          
+          {/* Efectos de fondo */}
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50" />
+            {Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-[1px] h-[1px] rounded-full bg-white/10"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, Math.random() * 50 - 25],
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  duration: Math.random() * 3 + 2,
+                  repeat: Infinity,
+                  delay: i * 0.1,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Controles */}
+          <div className="absolute top-6 right-6 z-10 flex gap-2">
+            <motion.button
+              onClick={() => setIsRotating(!isRotating)}
+              className="px-4 py-2 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-sm flex items-center gap-2"
+              style={{ color: color.main }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isRotating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isRotating ? 'Pause' : 'Play'}
+            </motion.button>
+            <motion.button
+              onClick={() => globeRef.current?.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 1000)}
+              className="px-4 py-2 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-sm flex items-center gap-2"
+              style={{ color: color.main }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </motion.button>
+          </div>
+
+          {/* Globo */}
+          {dimensions.width > 1 && (
+            <Globe
+              ref={globeRef}
+              width={dimensions.width}
+              height={dimensions.height}
+              globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+              backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+              
+              pointsData={locationsData}
+              pointColor="color"
+              pointAltitude={0.1}
+              pointRadius={0.8}
+              
+              labelsData={locationsData}
+              labelLat="lat"
+              labelLng="lng"
+              labelText={(d: any) => `${d.label} (${d.photos} photos)`}
+              labelSize={1.2}
+              labelColor={() => "rgba(255,255,255,0.8)"}
+              labelDotRadius={0.4}
+              labelAltitude={0.1}
+              
+              ringsData={locationsData}
+              ringColor={() => color.main}
+              ringMaxRadius={2.5}
+              ringPropagationSpeed={1.5}
+              ringRepeatPeriod={2000}
+              
+              arcsData={arcsData}
+              arcColor="color"
+              arcDashLength={0.3}
+              arcDashGap={1.5}
+              arcDashAnimateTime={3000}
+              arcStroke={0.4}
+              
+              atmosphereColor={color.main}
+              atmosphereAltitude={0.2}
+              
+              onGlobeReady={() => setGlobeLoaded(true)}
+            />
+          )}
+
+          {/* Información inferior */}
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div className="bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 max-w-md">
+              <h4 className="text-sm font-bold mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" style={{ color: color.main }} />
+                Visual Coverage
+              </h4>
+              <p className="text-xs text-white/60">
+                {locationsData.length} countries documented with {photos.length} photographs
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <div className="text-center px-4 py-2 rounded-lg bg-black/50 backdrop-blur-md border border-white/10">
+                <div className="text-lg font-bold" style={{ color: color.main }}>
+                  {locationsData.length}
+                </div>
+                <div className="text-xs text-white/60">Countries</div>
+              </div>
+              <div className="text-center px-4 py-2 rounded-lg bg-black/50 backdrop-blur-md border border-white/10">
+                <div className="text-lg font-bold" style={{ color: color.main }}>
+                  {photos.length}
+                </div>
+                <div className="text-xs text-white/60">Photos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 };
@@ -247,6 +605,18 @@ export default function Home() {
   const [activeCat, setActiveCat] = useState<string>("All");
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const currentScroll = window.scrollY;
+      setScrollProgress((currentScroll / totalScroll) * 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -263,120 +633,432 @@ export default function Home() {
           setAvailableCategories(['All', ...Array.from(new Set(data.map((p: Photo) => p.category)))]);
         }
       })
-      .catch((err) => console.error(err))
+      .catch(console.error)
       .finally(() => setIsLoading(false));
   }, []);
 
-  const filtered = useMemo(() => activeCat === "All" ? photos : photos.filter(p => p.category === activeCat), [activeCat, photos]);
+  const filtered = useMemo(() => 
+    activeCat === "All" ? photos : photos.filter(p => p.category === activeCat), 
+    [activeCat, photos]
+  );
+  
   const themeColor = useMemo(() => getThemeColor(activeCat), [activeCat]);
-  const handleSelectCategory = useCallback((cat: string) => setActiveCat(cat), []);
+  const handleSelectCategory = useCallback((cat: string) => {
+    setActiveCat(cat);
+    // Scroll suave a la galería
+    setTimeout(() => {
+      document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }, []);
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white/20 relative">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Marco animado */}
+      <AnimatedFrame color={themeColor.main} />
       
-      {/* FONDO FIJO */}
+      {/* Barra de progreso */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 z-50 origin-left bg-gradient-to-r from-[#ff0099] via-[#00f2ff] to-[#ff0099]"
+        style={{ scaleX: scrollProgress / 100 }}
+      />
+      
+      {/* Fondo con efectos */}
       <div className="fixed inset-0 pointer-events-none z-0">
-         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1a1a1a_0%,#000000_100%)]" />
-         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
-         <div className="absolute inset-0 transition-colors duration-1000 opacity-20" 
-              style={{ background: `radial-gradient(circle at 50% -20%, ${themeColor}, transparent 60%)` }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900/10 to-black" />
+        <div className="absolute inset-0 opacity-5"
+             style={{ 
+               backgroundImage: `radial-gradient(circle at 20% 30%, ${themeColor.main} 0%, transparent 40%),
+                                radial-gradient(circle at 80% 70%, ${themeColor.main} 0%, transparent 40%)`
+             }} />
+        
+        {/* Patrón sutil */}
+        <svg className="absolute inset-0 w-full h-full opacity-5">
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+          </pattern>
+          <rect width="100%" height="100%" fill="url(#grid)" style={{ color: themeColor.main }} />
+        </svg>
       </div>
 
-      {/* --- MARCO INTEGRADO (OPEN FRAME) --- */}
-      {/* Marco que respira, no corta el contenido */}
-      <div className="fixed inset-4 md:inset-8 z-40 pointer-events-none transition-colors duration-1000">
-        {/* Esquinas */}
-        <div className="absolute top-0 left-0 w-24 md:w-48 h-24 md:h-48 rounded-tl-3xl border-t border-l opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
-        <div className="absolute top-0 right-0 w-24 md:w-48 h-24 md:h-48 rounded-tr-3xl border-t border-r opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
-        <div className="absolute bottom-0 left-0 w-24 md:w-48 h-24 md:h-48 rounded-bl-3xl border-b border-l opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
-        <div className="absolute bottom-0 right-0 w-24 md:w-48 h-24 md:h-48 rounded-br-3xl border-b border-r opacity-60 transition-all duration-1000" style={{ borderColor: themeColor }} />
-        {/* Líneas sutiles laterales */}
-        <div className="absolute top-24 bottom-24 left-0 w-[1px] opacity-10" style={{ background: themeColor }} />
-        <div className="absolute top-24 bottom-24 right-0 w-[1px] opacity-10" style={{ background: themeColor }} />
-      </div>
-
-      {/* CONTENIDO PRINCIPAL */}
-      <div className="relative z-10 w-full min-h-screen px-8 md:px-20 lg:px-32 flex flex-col items-center">
-
-        {/* HERO */}
-        <header className="w-full max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[70vh] relative mb-12 mt-12">
-          <div className="flex items-center justify-center w-full gap-4 md:gap-12 lg:gap-20 mb-8 scale-90 md:scale-100">
-            <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.5, ease: "circOut" }} className="relative w-24 h-24 md:w-32 md:h-32">
-              <Image src="/flamin.png" alt="Flamingo" fill className="object-contain" style={{ filter: `drop-shadow(0 0 30px ${themeColor})` }} />
-            </motion.div>
-            <div className="text-center z-10">
-              <motion.h1 initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1 }} className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40 leading-[0.9]">
-                DANI<br className="md:hidden" /> FLAMINGO
-              </motion.h1>
-              <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.5, duration: 1 }} className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/50 to-transparent my-6" />
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="text-xs md:text-sm font-medium tracking-[0.8em] text-white/70 uppercase">
-                Visual Explorer • Global Artist
-              </motion.p>
-            </div>
-            <motion.div initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.5, ease: "circOut" }} className="relative w-24 h-24 md:w-32 md:h-32">
-              <Image src="/flamin-reverse.png" alt="Flamingo" fill className="object-contain" style={{ filter: `drop-shadow(0 0 30px ${themeColor})` }} />
+      {/* Contenido principal */}
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <header className="min-h-screen flex flex-col items-center justify-center px-4 md:px-8 relative">
+          <div className="max-w-7xl mx-auto w-full">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+              className="text-center mb-16"
+            >
+              <div className="flex items-center justify-center gap-4 md:gap-12 mb-12">
+                <motion.div 
+                  initial={{ x: -100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 1.2, delay: 0.2 }}
+                  className="relative w-32 h-32 md:w-48 md:h-48"
+                >
+                  <Image 
+                    src="/flamin.png" 
+                    alt="Flamingo" 
+                    fill 
+                    className="object-contain"
+                    style={{ 
+                      filter: `drop-shadow(0 0 40px ${themeColor.main})`,
+                      animation: 'float 6s ease-in-out infinite'
+                    }}
+                  />
+                </motion.div>
+                
+                <div className="text-center">
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-4">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                      DANI
+                    </span>
+                    <br />
+                    <motion.span 
+                      className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff0099] via-[#00f2ff] to-[#ff0099]"
+                      animate={{ 
+                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                      }}
+                      transition={{ 
+                        duration: 4, 
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                      style={{ 
+                        backgroundSize: '200% 100%',
+                        display: 'inline-block'
+                      }}
+                    >
+                      FLAMINGO
+                    </motion.span>
+                  </h1>
+                  
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="text-sm md:text-lg tracking-[0.3em] uppercase text-white/60 mb-8"
+                  >
+                    VISUAL EXPLORER • GLOBAL ARTIST
+                  </motion.p>
+                </div>
+                
+                <motion.div 
+                  initial={{ x: 100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 1.2, delay: 0.2 }}
+                  className="relative w-32 h-32 md:w-48 md:h-48"
+                >
+                  <Image 
+                    src="/flamin-reverse.png" 
+                    alt="Flamingo" 
+                    fill 
+                    className="object-contain"
+                    style={{ 
+                      filter: `drop-shadow(0 0 40px ${themeColor.main})`,
+                      animation: 'float 6s ease-in-out infinite 0.5s'
+                    }}
+                  />
+                </motion.div>
+              </div>
+              
+              {/* Estadísticas */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-wrap justify-center gap-8 md:gap-16 mb-12"
+              >
+                <PhysicsCounter n={78} label="COUNTRIES" color={themeColor.main} />
+                <PhysicsCounter n={1240} label="PHOTOS" color={themeColor.main} />
+                <PhysicsCounter n={24} label="CONTINENTS" color={themeColor.main} />
+                <PhysicsCounter n={7} label="YEARS" color={themeColor.main} />
+              </motion.div>
+              
+              {/* Scroll indicator */}
+              <motion.div 
+                animate={{ y: [0, 10, 0], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="text-xs uppercase tracking-widest text-white/40">Scroll to explore</span>
+                <ArrowRight className="w-5 h-5 rotate-90 text-white/40" />
+              </motion.div>
             </motion.div>
           </div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex gap-12 text-center">
-             <div><div className="text-3xl font-bold text-white"><PhysicsCounter n={50} />+</div><div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Countries</div></div>
-             <div className="w-[1px] h-10 bg-white/10" />
-             <div><div className="text-3xl font-bold text-white"><PhysicsCounter n={filtered.length} /></div><div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Photos</div></div>
-          </motion.div>
-          <motion.div className="absolute bottom-10 left-1/2 -translate-x-1/2" animate={{ y: [0, 10, 0], opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}>
-             <ArrowRight className="w-6 h-6 rotate-90 text-white/50" />
-          </motion.div>
         </header>
 
-        {/* NAV */}
-        <nav className="sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-xl w-full py-6 mb-16 border-b border-white/5">
-          <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-4 md:gap-8">
-            {CATEGORIES.map((cat) => {
-              const isActive = activeCat === cat;
-              const catColor = getThemeColor(cat);
-              return (
-                <button key={cat} onClick={() => handleSelectCategory(cat)} className="relative text-xs md:text-sm tracking-[0.2em] uppercase transition-all duration-300 py-2 group" style={{ color: isActive ? catColor : "#666", fontWeight: isActive ? 700 : 400 }}>
-                  {cat}
-                  <span className={`absolute bottom-0 left-0 h-[2px] bg-current transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-1/2'}`} style={{ boxShadow: isActive ? `0 0 10px ${catColor}` : 'none' }} />
-                </button>
-              );
-            })}
+        {/* Navigation */}
+        <nav className="sticky top-0 z-40 py-6 bg-black/80 backdrop-blur-xl border-b border-white/10 mb-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+              {CATEGORIES.map((cat) => {
+                const isActive = activeCat === cat;
+                const catColor = getThemeColor(cat);
+                
+                return (
+                  <motion.button
+                    key={cat}
+                    onClick={() => handleSelectCategory(cat)}
+                    className="relative px-4 py-2.5 rounded-lg overflow-hidden transition-all duration-300 group"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      background: isActive 
+                        ? `linear-gradient(135deg, ${catColor.main}20, ${catColor.main}40)` 
+                        : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${isActive ? catColor.main : 'rgba(255,255,255,0.1)'}`,
+                      color: isActive ? catColor.main : '#888',
+                    }}
+                  >
+                    {isActive && (
+                      <motion.div
+                        className="absolute inset-0"
+                        style={{ 
+                          background: `radial-gradient(circle at center, ${catColor.main}20, transparent 70%)` 
+                        }}
+                        layoutId="activeBg"
+                      />
+                    )}
+                    
+                    <span className="relative z-10 text-sm font-medium tracking-wider uppercase">
+                      {cat}
+                    </span>
+                    
+                    {isActive && (
+                      <motion.div
+                        className="absolute -bottom-1 left-1/2 w-8 h-1 rounded-full"
+                        style={{ background: catColor.main }}
+                        layoutId="activeLine"
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
         </nav>
 
-        {/* GRID */}
-        <div className="w-full max-w-[1600px] mb-32 min-h-[50vh]">
-          {isLoading ? (
-             <div className="flex justify-center items-center h-40"><div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: themeColor }}></div></div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl"><h3 className="text-2xl text-white/50 font-light mb-4">Void Sector</h3><p className="text-white/30 text-sm">No visual data found for {activeCat}</p></div>
-          ) : (
-            <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-16">
-              <AnimatePresence mode="popLayout">
-                {filtered.map((photo, i) => (
-                  <PhotoCard3D key={photo._id} photo={photo} index={i} themeColor={themeColor} delay={i} />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </div>
+        {/* Gallery Section */}
+        <section id="gallery" className="px-4 md:px-8 mb-32">
+          <div className="max-w-7xl mx-auto">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-32">
+                <motion.div
+                  className="w-16 h-16 rounded-full border-4 border-t-transparent"
+                  style={{ borderColor: themeColor.main }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <motion.p 
+                  className="mt-6 text-white/60 uppercase tracking-widest text-sm"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  Loading Visual Journey...
+                </motion.p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-32 rounded-2xl border border-dashed border-white/10"
+              >
+                <h3 className="text-3xl md:text-4xl font-bold mb-6" style={{ color: themeColor.main }}>
+                  No Visuals in This Dimension
+                </h3>
+                <p className="text-white/60 mb-8 max-w-md mx-auto">
+                  The {activeCat.toLowerCase()} universe awaits exploration. 
+                  Discover other categories to reveal photographic masterpieces.
+                </p>
+                <motion.button
+                  onClick={() => handleSelectCategory("All")}
+                  className="px-8 py-4 rounded-xl uppercase tracking-widest font-bold transition-all"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColor.main}, ${themeColor.light})`,
+                    boxShadow: `0 0 40px ${themeColor.main}40`
+                  }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    boxShadow: `0 0 60px ${themeColor.main}60`
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Explore All Dimensions
+                </motion.button>
+              </motion.div>
+            ) : (
+              <>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center mb-12"
+                >
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: themeColor.main }}>
+                    {activeCat === "All" ? "Visual Universe" : activeCat}
+                  </h2>
+                  <p className="text-white/60">
+                    {filtered.length} masterpiece{filtered.length !== 1 ? 's' : ''} • Curated Collection
+                  </p>
+                </motion.div>
+                
+                <motion.div 
+                  layout
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                  <AnimatePresence mode="popLayout">
+                    {filtered.map((photo, i) => (
+                      <PhotoCard3D
+                        key={photo._id}
+                        photo={photo}
+                        index={i}
+                        themeColor={themeColor}
+                        delay={i}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+                
+                {/* Gallery Info */}
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center mt-12 pt-8 border-t border-white/10"
+                >
+                  <p className="text-white/40 text-sm">
+                    Showing <span className="font-bold text-white">{filtered.length}</span> of{" "}
+                    <span className="font-bold text-white">{photos.length}</span> visual masterpieces
+                  </p>
+                </motion.div>
+              </>
+            )}
+          </div>
+        </section>
 
-        {/* MAPA */}
+        {/* Globe Section */}
         <GlobeSection color={themeColor} photos={photos} />
 
-        {/* FOOTER */}
-        <footer className="w-full border-t border-white/5 pt-16 pb-12 flex flex-col items-center gap-8 text-[10px] uppercase tracking-[0.2em] text-white/30 mb-8">
-           <div className="flex gap-8">
-              <a href="#" className="hover:text-white transition-colors flex items-center gap-2"><Instagram className="w-4 h-4" /> Instagram</a>
-              <a href="#" className="hover:text-white transition-colors flex items-center gap-2"><Mail className="w-4 h-4" /> Email</a>
-              <a href="#" className="hover:text-white transition-colors flex items-center gap-2"><ShoppingBag className="w-4 h-4" /> Prints</a>
-           </div>
-           <div className="text-center space-y-2">
-             <p>© {new Date().getFullYear()} Dani Flamingo. All rights reserved.</p>
-             <p className="flex items-center justify-center gap-2">Design by <a href="https://github.com/delysz" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white hover:underline transition-all flex items-center gap-1" style={{ color: themeColor }}>DELYSZ</a></p>
-           </div>
+        {/* Footer */}
+        <footer className="border-t border-white/10 pt-12 pb-8 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-8">
+              <div className="text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: themeColor.main }}>
+                  Continue the Journey
+                </h3>
+                <p className="text-white/60 max-w-md">
+                  Every photograph tells a story. Every location holds a memory. 
+                  The visual journey continues across continents.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.button 
+                  className="px-6 py-3 rounded-lg border border-white/20 hover:border-white/40 transition-all flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Instagram className="w-4 h-4" />
+                  <span className="text-sm uppercase tracking-widest">Instagram</span>
+                </motion.button>
+                <motion.button 
+                  className="px-6 py-3 rounded-lg transition-all flex items-center gap-2"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColor.main}, ${themeColor.light})`,
+                    boxShadow: `0 0 30px ${themeColor.main}40`
+                  }}
+                  whileHover={{ 
+                    scale: 1.05, 
+                    boxShadow: `0 0 40px ${themeColor.main}60` 
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Camera className="w-4 h-4" />
+                  <span className="text-sm uppercase tracking-widest font-bold text-black">View Portfolio</span>
+                </motion.button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pt-8 border-t border-white/10">
+              <div className="text-center md:text-left">
+                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Collaborate
+                </h4>
+                <p className="text-white/60 text-sm">Work with Dani Flamingo on visual projects worldwide.</p>
+              </div>
+              <div className="text-center">
+                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  Exhibitions
+                </h4>
+                <p className="text-white/60 text-sm">Current and upcoming gallery exhibitions.</p>
+              </div>
+              <div className="text-center md:text-right">
+                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Newsletter
+                </h4>
+                <p className="text-white/60 text-sm">Join for exclusive content and early access.</p>
+              </div>
+            </div>
+            
+            {/* Copyright */}
+            <div className="text-center pt-8 border-t border-white/10 text-white/40 text-sm">
+              <p>© {new Date().getFullYear()} Dani Flamingo Visuals • Created with passion across continents</p>
+              <p className="mt-2 text-xs opacity-60">
+                Interactive 3D Globe powered by Three.js • Real-time visualizations • Dynamic effects
+              </p>
+            </div>
+          </div>
         </footer>
-
       </div>
+
+      {/* Global Styles */}
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(2deg); }
+        }
+        
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+        
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(45deg, #ff0099, #00f2ff);
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(45deg, #ff66cc, #66f7ff);
+        }
+        
+        /* Selection color */
+        ::selection {
+          background: rgba(255, 0, 153, 0.3);
+          color: white;
+        }
+        
+        ::-moz-selection {
+          background: rgba(255, 0, 153, 0.3);
+          color: white;
+        }
+      `}</style>
     </main>
   );
 }
