@@ -4,10 +4,8 @@ import React, {
   useState, 
   useEffect, 
   useMemo, 
-  useCallback, 
   useRef, 
-  ReactNode, 
-  Suspense 
+  ReactNode 
 } from 'react';
 
 import { 
@@ -18,9 +16,7 @@ import {
   animate, 
   useSpring, 
   MotionConfig, 
-  useScroll, 
-  useVelocity,
-  useAnimationFrame
+  useScroll
 } from 'framer-motion';
 
 import Image from 'next/image';
@@ -30,7 +26,7 @@ import { client } from '@/lib/sanity';
 // Iconography
 import { 
   Globe2, MapPin, Pause, Play, RotateCcw, 
-  Instagram, Mail, Camera, ShoppingBag, ArrowRight, X, 
+  Camera, ShoppingBag, ArrowRight, X, 
   Search, Filter, Clock, Eye, Sparkles
 } from 'lucide-react';
 
@@ -119,7 +115,6 @@ const APP_CONFIG = {
   }
 };
 
-// CATEGORÍAS SIN "Architecture"
 const CATEGORIES: Category[] = [
   "All", "Beach", "Street", "Plants", "People", 
   "Animals", "Food", "Abstract", "Sofia", "Sofia's Artwork"
@@ -290,27 +285,23 @@ const MagneticButton = ({
     <Magnetic>
       <button 
         onClick={onClick}
-        className={`relative px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 font-mono overflow-hidden group
+        className={`relative px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 font-mono overflow-hidden group whitespace-nowrap
           ${active ? 'text-black' : 'text-white/80 hover:text-white'}`}
         style={{ 
           border: `2px solid ${active ? color : 'rgba(255,255,255,0.2)'}`,
           background: active ? color : 'rgba(0,0,0,0.3)'
         }}
       >
-        {/* Efecto de brillo */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
             background: `radial-gradient(circle at center, ${color}40 0%, transparent 70%)`
           }}
         />
-        
-        {/* Efecto de barrido */}
         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
           style={{
             background: `linear-gradient(90deg, transparent, ${color}40, transparent)`
           }}
         />
-        
         {active && (
           <motion.div 
             layoutId="nav-pill" 
@@ -319,7 +310,6 @@ const MagneticButton = ({
             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} 
           />
         )}
-        
         <span className="relative z-10 flex items-center gap-2">
           {children}
           {!active && (
@@ -375,8 +365,6 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
 
   const rotateX = useTransform(mouseY, [-0.5, 0.5], ["7deg", "-7deg"]);
   const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-7deg", "7deg"]);
-  const glareX = useTransform(mouseX, [-0.5, 0.5], ["0%", "100%"]);
-  const glareY = useTransform(mouseY, [-0.5, 0.5], ["0%", "100%"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -399,7 +387,7 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* MARCO NEON MEJORADO - Ahora con efecto de pulsación */}
+      {/* MARCO NEON MEJORADO */}
       <div className="absolute inset-0 rounded-xl z-30 pointer-events-none"
         style={{
           border: `3px solid ${themeColor.main}`,
@@ -413,7 +401,6 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
         }}
       />
       
-      {/* Efecto de esquinas con brillo */}
       <div className="absolute top-0 left-0 w-6 h-6 z-30">
         <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2" style={{borderColor: themeColor.main}} />
         <div className="absolute top-0.5 left-0.5 w-3 h-3 border-l border-t" style={{borderColor: themeColor.main, filter: `blur(1px)`}} />
@@ -431,11 +418,11 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
         <div className="absolute bottom-0.5 right-0.5 w-3 h-3 border-r border-b" style={{borderColor: themeColor.main, filter: `blur(1px)`}} />
       </div>
 
-      {/* Image Layer */}
+      {/* Image Layer - PROTEGIDO CON ?.includes */}
       <motion.div className="absolute inset-0 z-0 m-1.5 rounded-lg overflow-hidden" layoutId={`image-${photo._id}`}>
          <Image 
            src={photo.imageUrl} 
-           alt={photo.title} 
+           alt={photo.title || "Photo"} 
            fill 
            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" 
            className="object-cover transition-transform duration-700 group-hover:scale-110" 
@@ -444,12 +431,10 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
          />
       </motion.div>
 
-      {/* Efecto de escaneo holográfico */}
       <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
         <div className="absolute inset-0 holographic rounded-xl" />
       </div>
 
-      {/* Overlay de información */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-20 opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
       
       <motion.div 
@@ -485,7 +470,6 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
         </div>
       </motion.div>
 
-      {/* Indicador de hover */}
       <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="px-3 py-1.5 bg-black/70 backdrop-blur-md rounded-full text-[9px] font-mono uppercase tracking-wider border"
           style={{
@@ -538,10 +522,11 @@ const PhotoModalPro = ({ photo, onClose, themeColor }: any) => {
         </button>
 
         <div className="relative w-full md:w-2/3 h-1/2 md:h-full bg-[#050505] overflow-hidden group">
+           {/* PROTEGIDO CON ?.includes */}
            <motion.div className="absolute inset-0" layoutId={`image-${photo._id}`}>
              <Image 
                src={photo.imageUrl} 
-               alt={photo.title} 
+               alt={photo.title || "Photo"} 
                fill 
                className="object-contain p-4 md:p-0" 
                priority 
@@ -616,26 +601,26 @@ const PhotoModalPro = ({ photo, onClose, themeColor }: any) => {
           </div>
 
           <div className="flex gap-3">
-             <button className="flex-1 py-4 border rounded-lg text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all font-bold font-mono"
-               style={{
-                 borderColor: themeColor.main,
-                 color: themeColor.main,
-                 background: `${themeColor.main}10`,
-                 boxShadow: `0 0 20px ${themeColor.main}20`
-               }}
-             >
-               Download Hi-Res
-             </button>
-             <button className="flex-1 py-4 rounded-lg text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all font-bold font-mono flex items-center justify-center gap-2" 
-               style={{ 
-                 backgroundColor: `${themeColor.main}20`, 
-                 color: themeColor.main,
-                 border: `1px solid ${themeColor.main}40`,
-                 boxShadow: `0 0 25px ${themeColor.main}30`
-               }}
-             >
-               <ShoppingBag className="w-3 h-3" /> Acquire Print
-             </button>
+              <button className="flex-1 py-4 border rounded-lg text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all font-bold font-mono"
+                style={{
+                  borderColor: themeColor.main,
+                  color: themeColor.main,
+                  background: `${themeColor.main}10`,
+                  boxShadow: `0 0 20px ${themeColor.main}20`
+                }}
+              >
+                Download Hi-Res
+              </button>
+              <button className="flex-1 py-4 rounded-lg text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all font-bold font-mono flex items-center justify-center gap-2" 
+                style={{ 
+                  backgroundColor: `${themeColor.main}20`, 
+                  color: themeColor.main,
+                  border: `1px solid ${themeColor.main}40`,
+                  boxShadow: `0 0 25px ${themeColor.main}30`
+                }}
+              >
+                <ShoppingBag className="w-3 h-3" /> Acquire Print
+              </button>
           </div>
         </motion.div>
       </motion.div>
@@ -1079,6 +1064,7 @@ const Footer = ({ themeColor }: { themeColor: ThemeColor }) => {
 export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [activeCat, setActiveCat] = useState<Category>("All");
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const themeColor = useMemo(() => getThemeColor(activeCat), [activeCat]);
@@ -1114,7 +1100,7 @@ export default function Home() {
   const filteredPhotos = useMemo(() => {
     return photos.filter(p => {
       const matchCat = activeCat === "All" || p.category === activeCat;
-      const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchSearch = p.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (p.country && p.country.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchCat && matchSearch;
     });
@@ -1124,52 +1110,78 @@ export default function Home() {
     <MotionConfig transition={{ type: "spring", stiffness: 300, damping: 30 }}>
       <main className="min-h-screen bg-[#050505] text-white selection:bg-white/20 selection:text-black font-sans relative cursor-default">
         
-        {/* Global Visual Layers - SIN CURSOR PERSONALIZADO */}
+        {/* Global Visual Layers */}
         <NoiseOverlay />
         
         {/* Header Section */}
         <Header themeColor={themeColor} scrollY={scrollY} />
 
-        {/* Sticky Control Bar */}
+        {/* Sticky Control Bar - VERSION MODIFICADA PARA MOVIL */}
         <div className="sticky top-4 z-40 w-full px-4 mb-20 pointer-events-none">
-          <div className="max-w-[1400px] mx-auto bg-black/40 backdrop-blur-xl border rounded-full p-2 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto shadow-2xl"
+          <div 
+            className={`max-w-[1400px] mx-auto bg-black/40 backdrop-blur-xl border transition-all duration-300 pointer-events-auto shadow-2xl overflow-hidden
+              ${showMobileMenu ? 'rounded-[2rem]' : 'rounded-full'} 
+            `}
             style={{
               borderColor: `${themeColor.main}20`,
               boxShadow: `0 0 40px ${themeColor.main}30`
             }}
           >
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-2">
             
-            {/* Category Filter */}
-            <div className="flex flex-wrap justify-center gap-1 px-2 overflow-x-auto no-scrollbar max-w-full">
-              {CATEGORIES.map((cat) => (
-                <MagneticButton 
-                  key={cat} 
-                  active={activeCat === cat} 
-                  color={themeColor.main}
-                  onClick={() => setActiveCat(cat as Category)}
+              {/* CABECERA MÓVIL: Muestra categoría actual y botón de abrir/cerrar */}
+              <div className="md:hidden flex items-center justify-between w-full px-4 py-1">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/80 font-mono">
+                   Viewing: <span style={{ color: themeColor.main }}>{activeCat}</span>
+                </span>
+                <button 
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="p-2 rounded-full border bg-white/5 active:scale-95 transition-transform"
+                  style={{ borderColor: themeColor.main, color: themeColor.main }}
                 >
-                  {cat}
-                </MagneticButton>
-              ))}
-            </div>
+                  {showMobileMenu ? <X className="w-4 h-4"/> : <Filter className="w-4 h-4"/>}
+                </button>
+              </div>
 
-            {/* Search Input */}
-            <div className="relative group mr-2 hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
-                style={{ color: themeColor.main }}
-              />
-              <input 
-                type="text" 
-                placeholder="Search visuals..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-white/5 border rounded-full py-2 pl-10 pr-4 text-xs uppercase tracking-wider focus:outline-none w-40 focus:w-64 transition-all duration-300 placeholder:text-white/20 font-mono"
-                style={{
-                  borderColor: `${themeColor.main}30`,
-                  color: themeColor.main,
-                  boxShadow: `0 0 15px ${themeColor.main}20`
-                }}
-              />
+              {/* LISTA DE CATEGORÍAS (Oculta en móvil salvo que se abra) */}
+              <div className={`
+                ${showMobileMenu ? 'flex max-h-96 opacity-100 mt-4 pb-2' : 'hidden max-h-0 opacity-0'} 
+                md:flex md:max-h-full md:opacity-100 md:mt-0 md:pb-0
+                flex-wrap justify-center gap-1 px-2 overflow-x-auto no-scrollbar max-w-full w-full md:w-auto transition-all duration-500 ease-in-out
+              `}>
+                {CATEGORIES.map((cat) => (
+                  <MagneticButton 
+                    key={cat} 
+                    active={activeCat === cat} 
+                    color={themeColor.main}
+                    onClick={() => {
+                      setActiveCat(cat as Category);
+                      setShowMobileMenu(false); // Cierra el menú al seleccionar
+                    }}
+                  >
+                    {cat}
+                  </MagneticButton>
+                ))}
+              </div>
+
+              {/* Search Input */}
+              <div className="relative group mr-2 hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
+                  style={{ color: themeColor.main }}
+                />
+                <input 
+                  type="text" 
+                  placeholder="Search visuals..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-white/5 border rounded-full py-2 pl-10 pr-4 text-xs uppercase tracking-wider focus:outline-none w-40 focus:w-64 transition-all duration-300 placeholder:text-white/20 font-mono"
+                  style={{
+                    borderColor: `${themeColor.main}30`,
+                    color: themeColor.main,
+                    boxShadow: `0 0 15px ${themeColor.main}20`
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
