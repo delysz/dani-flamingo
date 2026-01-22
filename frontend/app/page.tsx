@@ -440,7 +440,7 @@ const PhotoCardPro = ({ photo, themeColor, onClick, priority = false }: any) => 
            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" 
            className="object-cover transition-transform duration-700 group-hover:scale-110" 
            priority={priority}
-           unoptimized={photo.imageUrl.includes('picsum')} 
+           unoptimized={photo.imageUrl?.includes('picsum')} 
          />
       </motion.div>
 
@@ -545,7 +545,7 @@ const PhotoModalPro = ({ photo, onClose, themeColor }: any) => {
                fill 
                className="object-contain p-4 md:p-0" 
                priority 
-               unoptimized={photo.imageUrl.includes('picsum')} 
+               unoptimized={photo.imageUrl?.includes('picsum')} 
              />
            </motion.div>
         </div>
