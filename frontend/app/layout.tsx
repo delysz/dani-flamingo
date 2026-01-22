@@ -4,19 +4,31 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// AQUÍ ES DONDE SE CAMBIA EL TÍTULO Y EL ICONO
 export const metadata: Metadata = {
   title: "Dani Flamingo | World Walker",
   description: "Photography Portfolio exploring 50+ countries. Captured by Dani Flamingo.",
+  keywords: ["fotografía", "travel photography", "portfolio", "visual director", "dani flamingo", "world walker"], // Palabras clave para SEO
+  
+  // Iconos de la web
   icons: {
-    icon: "/logo.jpeg", // Usamos tu logo como favicon directamente
+    icon: "/logo.jpeg",
     shortcut: "/logo.jpeg",
-    apple: "/logo.jpeg", // Para cuando alguien guarde la web en su iPhone
+    apple: "/logo.jpeg",
   },
+
+  // Cómo se ve al compartir en redes sociales
   openGraph: {
     title: "Dani Flamingo Photography",
     description: "Exploring the world, one frame at a time.",
-    images: ["/logo.jpeg"], // Imagen que sale al compartir en WhatsApp/Twitter
+    images: ["/logo.jpeg"],
+    url: "https://daniflamingo.vercel.app",
+    siteName: "Dani Flamingo Portfolio",
+    type: "website",
+  },
+
+  // AQUÍ PEGAS EL CÓDIGO DE GOOGLE SEARCH CONSOLE
+  verification: {
+    google: "google-site-verification=QeDASJi_K-booKSx2hdK5q3UHVnF1D_0xgT2s03A6N0",
   },
 };
 
